@@ -12,6 +12,7 @@ object MainForm: TMainForm
   Font.Style = []
   Menu = MainMenu
   OldCreateOrder = False
+  OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
@@ -57,7 +58,7 @@ object MainForm: TMainForm
     object btnCompile: TToolButton
       Left = 0
       Top = 0
-      Caption = 'btnCompile'
+      Action = actCompile
       ImageIndex = 0
     end
   end
@@ -69,8 +70,6 @@ object MainForm: TMainForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 29
-    ExplicitHeight = 606
   end
   object plRight: TPanel
     Left = 999
@@ -80,9 +79,6 @@ object MainForm: TMainForm
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitLeft = 764
-    ExplicitTop = 29
-    ExplicitHeight = 606
     object ProjectTree: TVirtualStringTree
       AlignWithMargins = True
       Left = 3
@@ -101,22 +97,12 @@ object MainForm: TMainForm
       Images = TreeImages
       TabOrder = 0
       TreeOptions.AutoOptions = [toAutoDropExpand, toAutoExpand, toAutoScrollOnExpand, toAutoTristateTracking, toAutoDeleteMovedNodes]
+      OnContextPopup = ProjectTreeContextPopup
+      OnDblClick = ProjectTreeDblClick
       OnGetText = ProjectTreeGetText
       OnGetImageIndex = ProjectTreeGetImageIndex
-      ExplicitHeight = 600
       Columns = <>
     end
-  end
-  object PageControl: TPageControl
-    Left = 188
-    Top = 38
-    Width = 808
-    Height = 466
-    Align = alClient
-    TabOrder = 3
-    ExplicitTop = 29
-    ExplicitWidth = 573
-    ExplicitHeight = 606
   end
   object Panel1: TPanel
     Left = 0
@@ -126,8 +112,7 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvNone
     Caption = 'Panel1'
-    TabOrder = 4
-    ExplicitTop = 594
+    TabOrder = 3
     object Log: TSynMemo
       AlignWithMargins = True
       Left = 3
@@ -150,11 +135,16 @@ object MainForm: TMainForm
       ReadOnly = True
       RightEdgeColor = clWhite
       ScrollBars = ssVertical
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 1184
-      ExplicitHeight = 128
     end
+  end
+  object PageControl: TJvPageControl
+    Left = 188
+    Top = 38
+    Width = 808
+    Height = 466
+    Align = alClient
+    TabOrder = 4
+    OnContextPopup = PageControlContextPopup
   end
   object MainMenu: TMainMenu
     Left = 272
@@ -164,26 +154,26 @@ object MainForm: TMainForm
       object New1: TMenuItem
         Caption = 'New'
         object Unit1: TMenuItem
-          Caption = 'Unit'
+          Action = actNewUnit
         end
         object Project2: TMenuItem
-          Caption = 'Project'
+          Action = actNewProject
         end
       end
       object Open1: TMenuItem
-        Caption = 'Open'
+        Action = actOpenProject
       end
       object Save1: TMenuItem
-        Caption = 'Save'
+        Action = actSaveActive
       end
       object Saveas1: TMenuItem
-        Caption = 'Save as'
+        Action = actSaveActiveAs
       end
       object SaveProjectas1: TMenuItem
-        Caption = 'Save Project as'
+        Action = actSaveProjectAs
       end
       object Saveall1: TMenuItem
-        Caption = 'Save all'
+        Action = actSaveAll
       end
       object Exit1: TMenuItem
         Caption = 'Exit'
@@ -219,13 +209,13 @@ object MainForm: TMainForm
     object Project1: TMenuItem
       Caption = 'Project'
       object Options1: TMenuItem
-        Caption = 'Options'
+        Action = actProjectOptions
       end
     end
     object Run1: TMenuItem
       Caption = 'Run'
       object Compile1: TMenuItem
-        Caption = 'Compile'
+        Action = actCompile
       end
     end
     object Help1: TMenuItem
@@ -241,7 +231,7 @@ object MainForm: TMainForm
     Left = 472
     Top = 336
     Bitmap = {
-      494C010102002000440018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102002000500018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -548,16 +538,16 @@ object MainForm: TMainForm
   object SynPasSyn: TSynPasSyn
     AsmAttri.Foreground = clBlack
     KeyAttri.Foreground = clNavy
-    Left = 624
+    Left = 696
     Top = 312
   end
   object ToolBarImages: TImageList
     Height = 32
     Width = 32
-    Left = 584
-    Top = 336
+    Left = 480
+    Top = 216
     Bitmap = {
-      494C010101000800140020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800200020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1092,8 +1082,113 @@ object MainForm: TMainForm
       FFFFFFFF00000000000000000000000000000000000000000000000000000000
       000000000000}
   end
+  object JvModernTabBarPainter1: TJvModernTabBarPainter
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    DisabledFont.Charset = DEFAULT_CHARSET
+    DisabledFont.Color = clGrayText
+    DisabledFont.Height = -11
+    DisabledFont.Name = 'Tahoma'
+    DisabledFont.Style = []
+    SelectedFont.Charset = DEFAULT_CHARSET
+    SelectedFont.Color = clWindowText
+    SelectedFont.Height = -11
+    SelectedFont.Name = 'Tahoma'
+    SelectedFont.Style = []
+    Left = 304
+    Top = 280
+  end
   object ActionList: TActionList
-    Left = 480
-    Top = 208
+    Left = 608
+    Top = 112
+    object actNewUnit: TAction
+      Caption = 'New Unit'
+      OnExecute = actNewUnitExecute
+    end
+    object actCloseUnitByTab: TAction
+      Caption = 'Close'
+      OnExecute = actCloseUnitByTabExecute
+    end
+    object actSaveActive: TAction
+      Caption = 'Save'
+      ShortCut = 16467
+      OnExecute = actSaveActiveExecute
+    end
+    object actSaveActiveAs: TAction
+      Caption = 'Save as'
+      OnExecute = actSaveActiveAsExecute
+    end
+    object actSaveAll: TAction
+      Caption = 'Save all'
+      OnExecute = actSaveAllExecute
+    end
+    object actSaveProjectAs: TAction
+      Caption = 'Save Project as'
+      OnExecute = actSaveProjectAsExecute
+    end
+    object actNewProject: TAction
+      Caption = 'New Project'
+      OnExecute = actNewProjectExecute
+    end
+    object actCompile: TAction
+      Caption = 'Compile'
+      ShortCut = 16504
+      OnExecute = actCompileExecute
+    end
+    object actOpenProject: TAction
+      Caption = 'Open Project'
+      OnExecute = actOpenProjectExecute
+    end
+    object actAddExistingUnit: TAction
+      Caption = 'Add Existing Unit'
+      OnExecute = actAddExistingUnitExecute
+    end
+    object actProjectOptions: TAction
+      Caption = 'Options'
+      OnExecute = actProjectOptionsExecute
+    end
+  end
+  object TabPopUp: TPopupMenu
+    Left = 768
+    Top = 128
+    object Close1: TMenuItem
+      Action = actCloseUnitByTab
+    end
+  end
+  object OpenUnitDialog: TOpenDialog
+    Filter = 'Pascal(*.pas)|*.pas'
+    Left = 584
+    Top = 304
+  end
+  object SaveUnitDialog: TSaveDialog
+    Filter = 'Pascal(*.pas)|*.pas'
+    Left = 848
+    Top = 64
+  end
+  object SaveProjectDialog: TSaveDialog
+    Filter = 'D16Project(*.D16P)|*.d16p'
+    Left = 648
+    Top = 224
+  end
+  object OpenProjectDialog: TOpenDialog
+    Filter = 'D16Project(*.d16p)|*.d16p'
+    Left = 552
+    Top = 392
+  end
+  object ProjectPopup: TPopupMenu
+    Left = 688
+    Top = 384
+    object NewUnit1: TMenuItem
+      Action = actNewUnit
+    end
+    object AddUnit1: TMenuItem
+      Action = actAddExistingUnit
+    end
+    object Options2: TMenuItem
+      Action = actProjectOptions
+    end
   end
 end
