@@ -8,7 +8,7 @@ uses
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
   JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines, Compiler,
-  PascalUnit;
+  PascalUnit, SynCompletionProposal;
 
 type
   TNodeData = record
@@ -87,6 +87,8 @@ type
     actProjectOptions: TAction;
     Options2: TMenuItem;
     CodeTree: TVirtualStringTree;
+    actPeekCompile: TAction;
+    SynCompletionProposal: TSynCompletionProposal;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeGetImageIndex(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
@@ -113,6 +115,11 @@ type
     procedure CodeTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure CodeTreeDblClick(Sender: TObject);
+    procedure actPeekCompileExecute(Sender: TObject);
+    procedure PageControlChange(Sender: TObject);
+    procedure SynCompletionProposalExecute(Kind: SynCompletionType;
+      Sender: TObject; var CurrentInput: string; var x, y: Integer;
+      var CanExecute: Boolean);
   private
     { Private declarations }
     FProject: TProject;
@@ -136,6 +143,8 @@ type
     procedure HandleSynEditKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure BuildCodeTreeFromUnit(AUnit: TPascalUnit);
+    procedure BuildCompletionLists(ACompletion, AInsert: TStrings);
+    function FormatCompletPropString(ACategory, AIdentifier, AType: string): string;
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -197,6 +206,16 @@ begin
   if OpenProjectDialog.Execute then
   begin
     OpenProject(OpenProjectDialog.FileName);
+  end;
+end;
+
+procedure TMainForm.actPeekCompileExecute(Sender: TObject);
+var
+  LUnit: TPascalUnit;
+begin
+  if FPeekCompiler.PeekCompile(GetActiveSynEdit().Lines.Text, PageControl.ActivePage.Caption, LUnit) then
+  begin
+   BuildCodeTreeFromUnit(LUnit);
   end;
 end;
 
@@ -365,6 +384,53 @@ begin
   CodeTree.EndUpdate;
 end;
 
+procedure TMainForm.BuildCompletionLists(ACompletion, AInsert: TStrings);
+var
+  LUnit: TPascalUnit;
+  LElement, LParam: TCodeElement;
+  LType, LCat, LIdentifier: string;
+begin
+  ACompletion.Clear;
+  AInsert.Clear;
+  for LUnit in FPeekCompiler.Units do
+  begin
+    for LElement in LUnit.SubElements do
+    begin
+      LType := '';
+      LIdentifier := LElement.Name;
+      if LElement is TDataType then
+      begin
+        LCat := 'type';
+      end;
+      if LElement is TVarDeclaration then
+      begin
+        LCat := 'var';
+        LType := TVarDeclaration(LElement).DataType.Name;
+      end;
+      if LElement is TProcDeclaration then
+      begin
+        LCat := 'proc';
+        LType :=  '(';
+        for LParam in TProcDeclaration(LElement).Parameters do
+        begin
+          if Length(LType) > 1 then
+          begin
+            LType := LType + '; ';
+          end;
+          LType := LType + LParam.Name + ': ' + TVarDeclaration(LParam).DataType.Name;
+        end;
+        LType := LType + ')';
+        if TProcDeclaration(LElement).IsFunction then
+        begin
+          LType := LType + ': ' + TProcDeclaration(LElement).ResultType.Name;
+        end;
+      end;
+      ACompletion.Add(FormatCompletPropString(LCat, LIdentifier, LType));
+      AInsert.Add(LElement.Name);
+    end;
+  end;
+end;
+
 procedure TMainForm.ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
 begin
   AEdit.Text := StringReplace(AEdit.Text, 'unit ' + AOld + ';', 'unit ' + ANew + ';', [rfIgnoreCase]);
@@ -455,12 +521,19 @@ begin
   Inc(FID);
   ProjectTree.Expanded[LNode] := True;
   SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
+  PageControlChange(PageControl);
 end;
 
 destructor TMainForm.Destroy;
 begin
   FPeekCompiler.Free;
   inherited;
+end;
+
+function TMainForm.FormatCompletPropString(ACategory, AIdentifier,
+  AType: string): string;
+begin
+  Result := '\color{clNavy}' + ACategory + '\column{}\color{clBlack}\Style{+B}' + AIdentifier + '\Style{-B}' + AType;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -592,6 +665,12 @@ begin
     LPath := LNode.Attributes['Path'];
     AddPage(ExtractFileName(LPath), LPath);
   end;
+end;
+
+procedure TMainForm.PageControlChange(Sender: TObject);
+begin
+  actPeekCompile.Execute();
+  SynCompletionProposal.Editor := GetActiveSynEdit();
 end;
 
 procedure TMainForm.PageControlContextPopup(Sender: TObject; MousePos: TPoint;
@@ -727,17 +806,19 @@ begin
   AUnit.SaveToFile(AUnit.SavePath);
 end;
 
+procedure TMainForm.SynCompletionProposalExecute(Kind: SynCompletionType;
+  Sender: TObject; var CurrentInput: string; var x, y: Integer;
+  var CanExecute: Boolean);
+begin
+  BuildCompletionLists(SynCompletionProposal.ItemList, SynCompletionProposal.InsertList);
+end;
+
 procedure TMainForm.HandleSynEditKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
-var
-  LUnit: TPascalUnit;
 begin
   if MilliSecondsBetween(FLastPeek, Now()) > 500 then
   begin
-    if FPeekCompiler.PeekCompile(GetActiveSynEdit().Lines.Text, PageControl.ActivePage.Caption, LUnit) then
-    begin
-      BuildCodeTreeFromUnit(LUnit);
-    end;
+    actPeekCompile.Execute();
     FLastPeek := Now();
   end;
 end;

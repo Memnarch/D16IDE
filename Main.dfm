@@ -164,6 +164,7 @@ object MainForm: TMainForm
     Height = 466
     Align = alClient
     TabOrder = 4
+    OnChange = PageControlChange
     OnContextPopup = PageControlContextPopup
   end
   object MainMenu: TMainMenu
@@ -251,7 +252,7 @@ object MainForm: TMainForm
     Left = 216
     Top = 56
     Bitmap = {
-      494C010102002000680018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102002000780018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -567,7 +568,7 @@ object MainForm: TMainForm
     Left = 216
     Top = 168
     Bitmap = {
-      494C010101000800380020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800480020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1151,6 +1152,10 @@ object MainForm: TMainForm
       Caption = 'Options'
       OnExecute = actProjectOptionsExecute
     end
+    object actPeekCompile: TAction
+      Caption = 'Peek Compile'
+      OnExecute = actPeekCompileExecute
+    end
   end
   object TabPopUp: TPopupMenu
     Left = 296
@@ -1191,5 +1196,32 @@ object MainForm: TMainForm
     object Options2: TMenuItem
       Action = actProjectOptions
     end
+  end
+  object SynCompletionProposal: TSynCompletionProposal
+    Options = [scoLimitToMatchedText, scoUseInsertList, scoUsePrettyText, scoUseBuiltInTimer, scoEndCharCompletion, scoCompleteWithTab, scoCompleteWithEnter]
+    EndOfTokenChr = '()[]. '
+    TriggerChars = '.'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    Font.Style = []
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clBtnText
+    TitleFont.Height = -11
+    TitleFont.Name = 'MS Sans Serif'
+    TitleFont.Style = [fsBold]
+    Columns = <
+      item
+        BiggestWord = 'CONSTRUCTOR'
+      end
+      item
+        BiggestWord = 'CONSTRUCTOR'
+      end>
+    OnExecute = SynCompletionProposalExecute
+    ShortCut = 16416
+    TimerInterval = 250
+    Left = 560
+    Top = 320
   end
 end
