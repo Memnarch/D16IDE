@@ -7,14 +7,21 @@ uses
   Dialogs, ToolWin, ComCtrls, Menus, ExtCtrls, SynEdit, ImgList, VirtualTrees,
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
-  JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines;
+  JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines, Compiler,
+  PascalUnit;
 
 type
   TNodeData = record
     Item: TObject;
   end;
 
+  TCodeNodeData = record
+    Caption: string;
+    Line: Integer;
+  end;
+
   PNodeData = ^TNodeData;
+  PCodeNodeData = ^TCodeNodeData;
 
   TMainForm = class(TForm)
     MainMenu: TMainMenu;
@@ -57,7 +64,6 @@ type
     Options1: TMenuItem;
     Compile1: TMenuItem;
     PageControl: TJvPageControl;
-    JvModernTabBarPainter1: TJvModernTabBarPainter;
     ActionList: TActionList;
     actNewUnit: TAction;
     TabPopUp: TPopupMenu;
@@ -80,6 +86,7 @@ type
     actAddExistingUnit: TAction;
     actProjectOptions: TAction;
     Options2: TMenuItem;
+    CodeTree: TVirtualStringTree;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeGetImageIndex(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
@@ -103,10 +110,15 @@ type
     procedure actAddExistingUnitExecute(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure actProjectOptionsExecute(Sender: TObject);
+    procedure CodeTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
+      Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
+    procedure CodeTreeDblClick(Sender: TObject);
   private
     { Private declarations }
     FProject: TProject;
     FID: Integer;
+    FPeekCompiler: TCompiler;
+    FLastPeek: TDateTime;
     procedure SaveUnit(AUnit: TIDEUnit);
     function GetTabIndexBelowCursor(): Integer;
     function GetTabIndexBySynEdit(AEdit: TSynEdit): Integer;
@@ -121,8 +133,13 @@ type
     procedure ClearProjects();
     procedure OpenProject(AFile: string);
     procedure HandleCompileMessage(AMessage, AUnitName: string; ALine: Integer; ALevel: TMessageLevel);
+    procedure HandleSynEditKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure BuildCodeTreeFromUnit(AUnit: TPascalUnit);
   public
     { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy(); override;
   end;
 
 var
@@ -131,7 +148,7 @@ var
 implementation
 
 uses
-  CompilerUtil, ProjectOptionDialog;
+ CompilerUtil, ProjectOptionDialog, CodeElement, VarDeclaration, ProcDeclaration, DateUtils, DataType;
 
 {$R *.dfm}
 
@@ -271,6 +288,7 @@ begin
   LUnit.SynEdit.Lines.Text := 'unit ' + ATitle + ';' + sLineBreak + sLineBreak + sLineBreak + sLineBreak + sLineBreak + sLineBreak + 'end.';
   LUnit.SynEdit.Parent := LPage;
   LUnit.SynEdit.Align := alClient;
+  LUnit.SynEdit.OnKeyDown := HandleSynEditKeyDown;
   LNode := GetTreeNodeByUnit(LUnit);
   if not Assigned(LNode) then
   begin
@@ -283,6 +301,68 @@ begin
     LUnit.SynEdit.Lines.LoadFromFile(AFile);
   end;
   SaveUnit(LUnit);
+end;
+
+procedure TMainForm.BuildCodeTreeFromUnit(AUnit: TPascalUnit);
+var
+  LUses, LProcedures, LVars, LTypes, LNode: PVirtualNode;
+  LElement: TCodeElement;
+  LName: string;
+  LPreFix: string;
+begin
+  CodeTree.BeginUpdate;
+  CodeTree.Clear;
+  LUses := CodeTree.AddChild(nil);
+  PCodeNodeData(CodeTree.GetNodeData(LUses)).Caption := 'Uses';
+  PCodeNodeData(CodeTree.GetNodeData(LUses)).Line := -1;
+  LVars := CodeTree.AddChild(nil);
+  LTypes := CodeTree.AddChild(nil);
+  PCodeNodeData(CodeTree.GetNodeData(LTypes)).Caption := 'Types';
+  PCodeNodeData(CodeTree.GetNodeData(LTypes)).Line := -1;
+  PCodeNodeData(CodeTree.GetNodeData(LVars)).Caption := 'Vars';
+  PCodeNodeData(CodeTree.GetNodeData(LVars)).Line := -1;
+  LProcedures := CodeTree.AddChild(nil);
+  PCodeNodeData(CodeTree.GetNodeData(LProcedures)).Caption := 'Procedures';
+  PCodeNodeData(CodeTree.GetNodeData(LProcedures)).Line := -1;
+  for LName in AUnit.UsedUnits do
+  begin
+      LNode := CodeTree.AddChild(LUses);
+      PCodeNodeData(CodeTree.GetNodeData(LNode)).Caption := LName;
+  end;
+  for LElement in AUnit.SubElements do
+  begin
+    LNode := nil;
+    if LElement is TVarDeclaration then
+    begin
+      LNode := CodeTree.AddChild(LVars);
+      PCodeNodeData(CodeTree.GetNodeData(LNode)).Caption := LElement.Name + ': ' + TVarDeclaration(LElement).DataType.Name;
+    end;
+    if LElement is TProcDeclaration then
+    begin
+      LNode := CodeTree.AddChild(LProcedures);
+      PCodeNodeData(CodeTree.GetNodeData(LNode)).Caption := LElement.Name;
+    end;
+    if (LElement is TDataType) and (TDataType(LElement) <> TDataType(LElement).BaseType) then
+    begin
+      LNode := CodeTree.AddChild(LTypes);
+      LPreFix := '';
+      if TDataType(LElement).RawType = rtPointer then
+      begin
+        LPreFix := '^';
+      end;
+      if TDataType(LElement).RawType = rtArray then
+      begin
+        LPreFix := 'array of ';
+      end;
+      PCodeNodeData(CodeTree.GetNodeData(LNode)).Caption := LElement.Name + ': ' + LPreFix + TDataType(LElement).BaseType.Name;
+    end;
+    if Assigned(LNode) then
+    begin
+      PCodeNodeData(CodeTree.GetNodeData(LNode)).Line := LElement.Line;
+    end;
+  end;
+  CodeTree.FullExpand(nil);
+  CodeTree.EndUpdate;
 end;
 
 procedure TMainForm.ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
@@ -325,6 +405,40 @@ begin
   end;
 end;
 
+procedure TMainForm.CodeTreeDblClick(Sender: TObject);
+var
+  LNode: PVirtualNode;
+  LPos: TPoint;
+begin
+  GetCursorPos(LPos);
+  LPos := CodeTree.ScreenToClient(LPos);
+  LNode := CodeTree.GetNodeAt(LPos.X, LPos.Y);
+  if Assigned(LNode) then
+  begin
+    if PCodeNodeData(CodeTree.GetNodeData(LNode)).Line >= 0 then
+    begin
+      GetActiveSynEdit().SetFocus;
+      GetActiveSynEdit().CaretY := PCodeNodeData(CodeTree.GetNodeData(LNode)).Line;
+    end;
+  end;
+end;
+
+procedure TMainForm.CodeTreeGetText(Sender: TBaseVirtualTree;
+  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+  var CellText: string);
+begin
+  CellText := PCodeNodeData(Sender.GetNodeData(Node)).Caption;
+end;
+
+constructor TMainForm.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPeekCompiler := TCompiler.Create();
+  FPeekCompiler.PeekMode := True;
+  CodeTree.NodeDataSize := SizeOf(TCodeNodeData);
+  FLastPeek := Now();
+end;
+
 procedure TMainForm.CreateNewProject(ATitle, AProjectFolder: string);
 var
   LNode: PVirtualNode;
@@ -341,6 +455,12 @@ begin
   Inc(FID);
   ProjectTree.Expanded[LNode] := True;
   SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
+end;
+
+destructor TMainForm.Destroy;
+begin
+  FPeekCompiler.Free;
+  inherited;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -605,6 +725,21 @@ begin
   ChangeUnitHeader(AUnit.SynEdit, ChangeFileExt(AUnit.Caption, ''), ChangeFileExt(ExtractFileName(AUnit.SavePath),''));
   AUnit.Caption := ExtractFileName(AUnit.SavePath);
   AUnit.SaveToFile(AUnit.SavePath);
+end;
+
+procedure TMainForm.HandleSynEditKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  LUnit: TPascalUnit;
+begin
+  if MilliSecondsBetween(FLastPeek, Now()) > 500 then
+  begin
+    if FPeekCompiler.PeekCompile(GetActiveSynEdit().Lines.Text, PageControl.ActivePage.Caption, LUnit) then
+    begin
+      BuildCodeTreeFromUnit(LUnit);
+    end;
+    FLastPeek := Now();
+  end;
 end;
 
 end.

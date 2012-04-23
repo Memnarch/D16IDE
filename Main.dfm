@@ -70,6 +70,26 @@ object MainForm: TMainForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 1
+    object CodeTree: TVirtualStringTree
+      AlignWithMargins = True
+      Left = 3
+      Top = 3
+      Width = 179
+      Height = 460
+      Align = alClient
+      Header.AutoSizeIndex = 0
+      Header.DefaultHeight = 17
+      Header.Font.Charset = DEFAULT_CHARSET
+      Header.Font.Color = clWindowText
+      Header.Font.Height = -11
+      Header.Font.Name = 'Tahoma'
+      Header.Font.Style = []
+      Header.MainColumn = -1
+      TabOrder = 0
+      OnDblClick = CodeTreeDblClick
+      OnGetText = CodeTreeGetText
+      Columns = <>
+    end
   end
   object plRight: TPanel
     Left = 999
@@ -147,8 +167,8 @@ object MainForm: TMainForm
     OnContextPopup = PageControlContextPopup
   end
   object MainMenu: TMainMenu
-    Left = 272
-    Top = 152
+    Left = 216
+    Top = 112
     object File1: TMenuItem
       Caption = 'File'
       object New1: TMenuItem
@@ -228,10 +248,10 @@ object MainForm: TMainForm
   object TreeImages: TImageList
     Height = 24
     Width = 24
-    Left = 472
-    Top = 336
+    Left = 216
+    Top = 56
     Bitmap = {
-      494C010102002000500018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102002000680018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -538,16 +558,16 @@ object MainForm: TMainForm
   object SynPasSyn: TSynPasSyn
     AsmAttri.Foreground = clBlack
     KeyAttri.Foreground = clNavy
-    Left = 696
-    Top = 312
+    Left = 296
+    Top = 56
   end
   object ToolBarImages: TImageList
     Height = 32
     Width = 32
-    Left = 480
-    Top = 216
+    Left = 216
+    Top = 168
     Bitmap = {
-      494C010101000800200020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800380020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1082,28 +1102,9 @@ object MainForm: TMainForm
       FFFFFFFF00000000000000000000000000000000000000000000000000000000
       000000000000}
   end
-  object JvModernTabBarPainter1: TJvModernTabBarPainter
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    DisabledFont.Charset = DEFAULT_CHARSET
-    DisabledFont.Color = clGrayText
-    DisabledFont.Height = -11
-    DisabledFont.Name = 'Tahoma'
-    DisabledFont.Style = []
-    SelectedFont.Charset = DEFAULT_CHARSET
-    SelectedFont.Color = clWindowText
-    SelectedFont.Height = -11
-    SelectedFont.Name = 'Tahoma'
-    SelectedFont.Style = []
-    Left = 304
-    Top = 280
-  end
   object ActionList: TActionList
-    Left = 608
-    Top = 112
+    Left = 216
+    Top = 224
     object actNewUnit: TAction
       Caption = 'New Unit'
       OnExecute = actNewUnitExecute
@@ -1152,35 +1153,35 @@ object MainForm: TMainForm
     end
   end
   object TabPopUp: TPopupMenu
-    Left = 768
-    Top = 128
+    Left = 296
+    Top = 168
     object Close1: TMenuItem
       Action = actCloseUnitByTab
     end
   end
   object OpenUnitDialog: TOpenDialog
     Filter = 'Pascal(*.pas)|*.pas'
-    Left = 584
-    Top = 304
+    Left = 216
+    Top = 328
   end
   object SaveUnitDialog: TSaveDialog
     Filter = 'Pascal(*.pas)|*.pas'
-    Left = 848
-    Top = 64
+    Left = 296
+    Top = 224
   end
   object SaveProjectDialog: TSaveDialog
     Filter = 'D16Project(*.D16P)|*.d16p'
-    Left = 648
-    Top = 224
+    Left = 216
+    Top = 272
   end
   object OpenProjectDialog: TOpenDialog
     Filter = 'D16Project(*.d16p)|*.d16p'
-    Left = 552
-    Top = 392
+    Left = 216
+    Top = 384
   end
   object ProjectPopup: TPopupMenu
-    Left = 688
-    Top = 384
+    Left = 296
+    Top = 112
     object NewUnit1: TMenuItem
       Action = actNewUnit
     end

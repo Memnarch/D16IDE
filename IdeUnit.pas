@@ -69,6 +69,9 @@ begin
     FSynEdit := TSynEdit.Create(nil);
     FSynEdit.Name := 'SynEdit';
     FSynEdit.Gutter.ShowLineNumbers := True;
+    FSynEdit.WantTabs := True;
+    FSynEdit.TabWidth := 2;
+    FSynEdit.Options := FSynEdit.Options - [eoSmartTabs];
     if (SavePath <> '') and FileExists(FSavePath) then
     begin
       FSynEdit.Lines.LoadFromFile(FSavePath);
