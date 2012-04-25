@@ -252,7 +252,7 @@ object MainForm: TMainForm
     Left = 216
     Top = 56
     Bitmap = {
-      494C010102002000780018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102002000840018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -568,7 +568,7 @@ object MainForm: TMainForm
     Left = 216
     Top = 168
     Bitmap = {
-      494C010101000800480020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800540020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1199,12 +1199,13 @@ object MainForm: TMainForm
   end
   object SynCompletionProposal: TSynCompletionProposal
     Options = [scoLimitToMatchedText, scoUseInsertList, scoUsePrettyText, scoUseBuiltInTimer, scoEndCharCompletion, scoCompleteWithTab, scoCompleteWithEnter]
+    Width = 480
     EndOfTokenChr = '()[]. '
     TriggerChars = '.'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'MS Sans Serif'
+    Font.Height = -13
+    Font.Name = 'Courier New'
     Font.Style = []
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clBtnText
@@ -1221,7 +1222,7 @@ object MainForm: TMainForm
     OnExecute = SynCompletionProposalExecute
     ShortCut = 16416
     TimerInterval = 250
-    Left = 560
-    Top = 320
+    Left = 368
+    Top = 304
   end
 end

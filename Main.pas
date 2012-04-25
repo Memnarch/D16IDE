@@ -145,6 +145,7 @@ type
     procedure BuildCodeTreeFromUnit(AUnit: TPascalUnit);
     procedure BuildCompletionLists(ACompletion, AInsert: TStrings);
     function FormatCompletPropString(ACategory, AIdentifier, AType: string): string;
+    function GetActiveIDEUnit(): TIDEUnit;
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -215,7 +216,7 @@ var
 begin
   if FPeekCompiler.PeekCompile(GetActiveSynEdit().Lines.Text, PageControl.ActivePage.Caption, LUnit) then
   begin
-   BuildCodeTreeFromUnit(LUnit);
+    BuildCodeTreeFromUnit(LUnit);
   end;
 end;
 
@@ -386,14 +387,25 @@ end;
 
 procedure TMainForm.BuildCompletionLists(ACompletion, AInsert: TStrings);
 var
-  LUnit: TPascalUnit;
+  LUnit, LActiveUnit: TPascalUnit;
   LElement, LParam: TCodeElement;
   LType, LCat, LIdentifier: string;
+  LUnitName: string;
 begin
   ACompletion.Clear;
   AInsert.Clear;
+  LUnitName := ChangeFileExt(GetActiveIDEUnit().Caption, '');
+  LActiveUnit :=  FPeekCompiler.GetUnitByName(LUnitName);
+  if not Assigned(LActiveUnit) then
+  begin
+    Exit;
+  end;
   for LUnit in FPeekCompiler.Units do
   begin
+    if (not SameText(LUnit.Name, LActiveUnit.Name)) and (LActiveUnit.UsedUnits.IndexOf(LUnit.Name) < 0) then
+    begin
+      Continue;
+    end;
     for LElement in LUnit.SubElements do
     begin
       LType := '';
@@ -405,7 +417,7 @@ begin
       if LElement is TVarDeclaration then
       begin
         LCat := 'var';
-        LType := TVarDeclaration(LElement).DataType.Name;
+        LType := ': ' + TVarDeclaration(LElement).DataType.Name;
       end;
       if LElement is TProcDeclaration then
       begin
@@ -515,6 +527,8 @@ begin
   LNode := ProjectTree.AddChild(nil);
   FProject.ProjectPath := AProjectFolder;
   FProject.ProjectName := ChangeFileExt(ATitle,'.d16p');
+  FPeekCompiler.Units.Clear;
+  FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
   LData := ProjectTree.GetNodeData(LNode);
   LData.Item := FProject;
   AddPage('Unit' + IntToSTr(FID));
@@ -552,6 +566,23 @@ end;
 function TMainForm.GetActiveSynEdit: TSynEdit;
 begin
   Result := TSynEdit(PageControl.Pages[PageControl.ActivePageIndex].FindChildControl('SynEdit'));
+end;
+
+function TMainForm.GetActiveIDEUnit: TIDEUnit;
+var
+  i: Integer;
+  LEdit: TSynEdit;
+begin
+  Result := FProject.Units.Items[0];
+  LEdit := GetActiveSynEdit();
+  for i := 0 to FProject.Units.Count - 1 do
+  begin
+    if LEdit = FProject.Units.Items[i].SynEdit then
+    begin
+      Result := FProject.Units.Items[i];
+      Break;
+    end;
+  end;
 end;
 
 function TMainForm.GetTabIndexBelowCursor: Integer;
@@ -657,6 +688,9 @@ begin
   FProject := TProject.Create();
   FProject.ProjectName := ChangeFileExt(LRoot.Attributes['Name'], '.d16p');
   FProject.ProjectPath := ExtractFilePath(AFile);
+  FPeekCompiler.Reset();
+  FPeekCompiler.Initialize();
+  FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
   LPNode := ProjectTree.AddChild(nil);
   PNodeData(ProjectTree.GetNodeData(LPNode)).Item := FProject;
   for i := 0 to LRoot.ChildNodes.Count - 1 do
@@ -665,6 +699,7 @@ begin
     LPath := LNode.Attributes['Path'];
     AddPage(ExtractFileName(LPath), LPath);
   end;
+  SynCompletionProposal.Editor := GetActiveSynEdit();
 end;
 
 procedure TMainForm.PageControlChange(Sender: TObject);
@@ -811,6 +846,7 @@ procedure TMainForm.SynCompletionProposalExecute(Kind: SynCompletionType;
   var CanExecute: Boolean);
 begin
   BuildCompletionLists(SynCompletionProposal.ItemList, SynCompletionProposal.InsertList);
+  SynCompletionProposal.NbLinesInWindow := 8;
 end;
 
 procedure TMainForm.HandleSynEditKeyDown(Sender: TObject; var Key: Word;
