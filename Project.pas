@@ -3,7 +3,7 @@ unit Project;
 interface
 
 uses
-  Classes, Types, Generics.Collections, IDEUnit;
+  Classes, Types, Windows, SysUtils, Generics.Collections, IDEUnit;
 
 type
   TProject = class
@@ -18,6 +18,7 @@ type
   public
     constructor Create();
     destructor Destroy(); override;
+    procedure SaveToFile(AFile: string);
     property ProjectName: string read FProjectName write FProjectName;
     property ProjectPath: string read FProjectPath write FProjectPath;
     property Units: TObjectList<TIDEUnit> read FUnits;
@@ -29,6 +30,8 @@ type
 
 implementation
 
+uses
+  xmldom, XMLIntf, msxmldom, XMLDoc;
 { TProject }
 
 constructor TProject.Create;
@@ -44,6 +47,27 @@ destructor TProject.Destroy;
 begin
   FUnits.Free;
   inherited;
+end;
+
+procedure TProject.SaveToFile(AFile: string);
+var
+  LDoc: IXMLDocument;
+  LRootNode, LSubNode: iXMLNode;
+  LUnit: TIDEUnit;
+begin
+  LDoc := TXMLDocument.Create(nil);
+  LDoc.Active := True;
+  LRootNode := LDoc.AddChild('Project');
+  LRootNode.Attributes['Name'] := ChangeFileExt(ExtractFileName(AFile), '');
+//  LNode := ProjectTree.GetFirstChild(ProjectTree.GetFirst());
+//  while Assigned(LNode) do
+//  begin
+  for LUnit in FUnits do
+  begin
+    LSubNode := LRootNode.AddChild('Unit');
+    LSubNode.Attributes['Path'] := LUnit.FileName;
+  end;
+  LDoc.SaveToFile(AFile);
 end;
 
 end.

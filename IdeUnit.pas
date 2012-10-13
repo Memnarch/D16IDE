@@ -14,13 +14,16 @@ type
     FImageIndex: Integer;
     function GetIsOpen: Boolean;
     function GetSynEdit: TSynEdit;
+    function GetFileName: string;
   public
     destructor Destroy(); override;
     procedure Open();
     procedure Close();
     procedure SaveToFile(AFile: string);
+    procedure LoadFromFile(AFile: string);
     property Caption: string read FCaption write FCaption;
     property SavePath: string read FSavePath write FSavePath;
+    property FileName: string read GetFileName;
     property ImageIndex: Integer read FImageIndex write FImageIndex;
     property SynEdit: TSynEdit read GetSynEdit;
     property IsOpen: Boolean read GetIsOpen;
@@ -29,7 +32,7 @@ type
 implementation
 
 uses
-  SysUtils;
+  Windows, SysUtils;
 
 { TIDEUnit }
 
@@ -48,6 +51,11 @@ begin
   inherited;
 end;
 
+function TIDEUnit.GetFileName: string;
+begin
+  Result := ChangeFileExt(IncludeTrailingBackslash(FSavePath) + FCaption, '.pas');
+end;
+
 function TIDEUnit.GetIsOpen: Boolean;
 begin
   Result := Assigned(FSynEdit);
@@ -60,6 +68,13 @@ begin
   begin
     raise Exception.Create('Unit is not open');
   end;
+end;
+
+procedure TIDEUnit.LoadFromFile(AFile: string);
+begin
+  FSynEdit.Lines.LoadFromFile(AFile);
+  FSavePath := ExtractFilePath(AFile);
+  FCaption := ChangeFileExt(ExtractFileName(AFile), '');
 end;
 
 procedure TIDEUnit.Open;
@@ -83,6 +98,8 @@ procedure TIDEUnit.SaveToFile(AFile: string);
 begin
   ForceDirectories(ExcludeTrailingBackslash(ExtractFilePath(AFile)));
   FSynEdit.Lines.SaveToFile(AFile);
+  FSavePath := ExtractFilePath(AFile);
+  FCaption := ChangeFileExt(ExtractFileName(AFile), '');
 end;
 
 end.

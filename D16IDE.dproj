@@ -37,7 +37,7 @@
 			<DCC_K>false</DCC_K>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_UnitSearchPath>E:\Git\D16Pascal;E:\Git\D16Pascal\Lexer;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>E:\Git\D16Pascal;E:\Git\D16Pascal\Lexer;E:\Git\D16Emulator;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
@@ -62,6 +62,9 @@
 			<DCCReference Include="..\D16Pascal\CompilerUtil.pas"/>
 			<DCCReference Include="ProjectOptionDialog.pas">
 				<Form>ProjectOption</Form>
+			</DCCReference>
+			<DCCReference Include="CPUViewForm.pas">
+				<Form>CPUView</Form>
 			</DCCReference>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

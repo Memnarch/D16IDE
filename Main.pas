@@ -8,7 +8,7 @@ uses
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
   JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines, Compiler,
-  PascalUnit, SynCompletionProposal;
+  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto;
 
 type
   TNodeData = record
@@ -42,7 +42,6 @@ type
     Edit1: TMenuItem;
     Search1: TMenuItem;
     Project1: TMenuItem;
-    Run1: TMenuItem;
     Help1: TMenuItem;
     About1: TMenuItem;
     New1: TMenuItem;
@@ -62,7 +61,6 @@ type
     Find1: TMenuItem;
     Replace1: TMenuItem;
     Options1: TMenuItem;
-    Compile1: TMenuItem;
     PageControl: TJvPageControl;
     ActionList: TActionList;
     actNewUnit: TAction;
@@ -89,6 +87,13 @@ type
     CodeTree: TVirtualStringTree;
     actPeekCompile: TAction;
     SynCompletionProposal: TSynCompletionProposal;
+    btnRun: TToolButton;
+    actRun: TAction;
+    actStop: TAction;
+    ToolButton1: TToolButton;
+    Compile1: TMenuItem;
+    Run1: TMenuItem;
+    Stop1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeGetImageIndex(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
@@ -110,7 +115,6 @@ type
     procedure ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
       var Handled: Boolean);
     procedure actAddExistingUnitExecute(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure actProjectOptionsExecute(Sender: TObject);
     procedure CodeTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
@@ -120,19 +124,25 @@ type
     procedure SynCompletionProposalExecute(Kind: SynCompletionType;
       Sender: TObject; var CurrentInput: string; var x, y: Integer;
       var CanExecute: Boolean);
+    procedure actRunExecute(Sender: TObject);
+    procedure actStopExecute(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
   private
     { Private declarations }
     FProject: TProject;
     FID: Integer;
     FPeekCompiler: TCompiler;
     FLastPeek: TDateTime;
-    procedure SaveUnit(AUnit: TIDEUnit);
+    FCpuView: TCPUView;
+    FEmulator: TD16Emulator;
+    FErrors: Cardinal;
+    function SaveUnit(AUnit: TIDEUnit): Boolean;
     function GetTabIndexBelowCursor(): Integer;
     function GetTabIndexBySynEdit(AEdit: TSynEdit): Integer;
     function GetTreeNodeBySynEdit(AEdit: TSynEdit): PVirtualNode;
     function GetTreeNodeByUnit(AUnit: TIDEUnit): PVirtualNode;
     function GetActiveSynEdit(): TSynEdit;
-    procedure SaveProject(AFile: string);
+    function SaveProject(AProject: TProject): Boolean;
     procedure ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
     procedure AddPage(ATitle: string; AFile: string = ''; AUnit: TIDEUnit = nil);
     procedure ClosePage(AIndex: Integer);
@@ -146,6 +156,8 @@ type
     procedure BuildCompletionLists(ACompletion, AInsert: TStrings);
     function FormatCompletPropString(ACategory, AIdentifier, AType: string): string;
     function GetActiveIDEUnit(): TIDEUnit;
+    procedure HandleCPUViewClose(Sender: TObject; var Action: TCloseAction);
+    procedure HandleEmuMessage(AMessage: string);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -181,7 +193,8 @@ procedure TMainForm.actCompileExecute(Sender: TObject);
 begin
   actSaveAll.Execute();
   Log.Clear;
-  CompileFile(FProject.Units.Items[0].SavePath, FProject.Optimize, FProject.Assemble,
+  FErrors := 0;
+  CompileFile(FProject.Units.Items[0].FileName, FProject.Optimize, FProject.Assemble,
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
 end;
 
@@ -232,6 +245,26 @@ begin
   end;
 end;
 
+procedure TMainForm.actRunExecute(Sender: TObject);
+begin
+  actCompile.Execute();
+  if (FErrors = 0) and (FProject.Assemble) then
+  begin
+    actCompile.Enabled := False;
+    actRun.Enabled := False;
+    actStop.Enabled := True;
+    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.asm'));
+    FCPUView.Show;
+    Log.Clear;
+    FEmulator := TD16Emulator.Create();
+    FEmulator.OnMessage := HandleEmuMessage;
+    FCpuView.SetEmulator(FEmulator);
+    Log.Lines.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16')));
+    FEmulator.LoadFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16'), FProject.UseBigEndian);
+    FEmulator.Run();
+  end;
+end;
+
 procedure TMainForm.actSaveActiveAsExecute(Sender: TObject);
 var
   LNode: PVirtualNode;
@@ -265,17 +298,38 @@ begin
   for i := 0 to PageControl.PageCount - 1 do
   begin
     LNode := GetTreeNodeBySynEdit(TSynEdit(PageControl.Pages[i].FindChildControl('SynEdit')));
-    SaveUnit(TIDEUnit(PNodeData(ProjectTree.GetNodeData(LNode)).Item));
+    if not SaveUnit(TIDEUnit(PNodeData(ProjectTree.GetNodeData(LNode)).Item)) then
+    begin
+      actSaveAll.Tag := Integer(False);
+      Exit;
+    end;
   end;
-  SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
+  if SaveProject(FProject) then
+  begin
+    actSaveAll.Tag := Integer(True);
+  end;
 end;
 
 procedure TMainForm.actSaveProjectAsExecute(Sender: TObject);
 begin
-  if SaveProjectDialog.Execute then
+  FProject.ProjectPath := '';
+  SaveProject(FProject);
+end;
+
+procedure TMainForm.actStopExecute(Sender: TObject);
+begin
+  if Assigned(FEmulator) then
   begin
-    SaveProject(ChangeFileExt(SaveProjectDialog.FileName, '.d16p'));
+    FEmulator.Stop;
+    FEmulator.Terminate;
+    WaitForSingleObject(FEmulator.Handle, 5000);
+    FEmulator.Free;
+    FEmulator := nil;
   end;
+  actCompile.Enabled := True;
+  actRun.Enabled := True;
+  actStop.Enabled := False;
+  FCPUView.Hide;
 end;
 
 procedure TMainForm.AddPage(ATitle: string; AFile: string = ''; AUnit: TIDEUnit = nil);
@@ -297,11 +351,11 @@ begin
     LUnit := TIDEUnit.Create();
   end;
   LUnit.Caption := ATitle;
-  if SameText(ExtractFileExt(LUnit.Caption), '') then
-  begin
-    LUnit.Caption := LUnit.Caption + '.pas';
-  end;
-  LUnit.SavePath := FProject.ProjectPath + '\' + LUnit.Caption;
+//  if SameText(ExtractFileExt(LUnit.Caption), '') then
+//  begin
+//    LUnit.Caption := LUnit.Caption + '.pas';
+//  end;
+//  LUnit.SavePath := FProject.ProjectPath + '\' + LUnit.Caption;
   LUnit.ImageIndex := 1;
   LUnit.Open;
   LUnit.SynEdit.Highlighter := SynPasSyn;
@@ -318,9 +372,9 @@ begin
   FProject.Units.Add(LUnit);
   if AFile <> '' then
   begin
-    LUnit.SynEdit.Lines.LoadFromFile(AFile);
+    LUnit.LoadFromFile(AFile);
   end;
-  SaveUnit(LUnit);
+//  SaveUnit(LUnit);
 end;
 
 procedure TMainForm.BuildCodeTreeFromUnit(AUnit: TPascalUnit);
@@ -444,8 +498,16 @@ begin
 end;
 
 procedure TMainForm.ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
+var
+  LIndex: Integer;
 begin
   AEdit.Text := StringReplace(AEdit.Text, 'unit ' + AOld + ';', 'unit ' + ANew + ';', [rfIgnoreCase]);
+  LIndex := GetTabIndexBySynEdit(AEdit);
+  if LIndex > -1 then
+  begin
+    PageControl.Pages[Lindex].Caption := ANew;
+  end;
+  ProjectTree.Repaint();
 end;
 
 procedure TMainForm.ClearProjects;
@@ -513,6 +575,10 @@ begin
   inherited;
   FPeekCompiler := TCompiler.Create();
   FPeekCompiler.PeekMode := True;
+  FCpuView := TCPUView.Create(Self);
+  FCpuView.Parent := Self;
+  FCPuView.Align := alRight;
+  FCPUView.OnClose := HandleCPUViewClose;
   CodeTree.NodeDataSize := SizeOf(TCodeNodeData);
   FLastPeek := Now();
 end;
@@ -527,14 +593,14 @@ begin
   LNode := ProjectTree.AddChild(nil);
   FProject.ProjectPath := AProjectFolder;
   FProject.ProjectName := ChangeFileExt(ATitle,'.d16p');
-  FPeekCompiler.Units.Clear;
-  FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
+  FPeekCompiler.Reset();
+//  FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
   LData := ProjectTree.GetNodeData(LNode);
   LData.Item := FProject;
   AddPage('Unit' + IntToSTr(FID));
   Inc(FID);
   ProjectTree.Expanded[LNode] := True;
-  SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
+//  SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
   PageControlChange(PageControl);
 end;
 
@@ -550,16 +616,25 @@ begin
   Result := '\color{clNavy}' + ACategory + '\column{}\color{clBlack}\Style{+B}' + AIdentifier + '\Style{-B}' + AType;
 end;
 
-procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  actSaveAll.Execute;
+  if Assigned(FEmulator) then
+  begin
+    CanClose := False;
+    ShowMessage('Please stop the running emulation before closing the IDE')
+  end
+  else
+  begin
+    actSaveAll.Execute();
+    CanClose := Boolean(actSaveAll.Tag);
+  end;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ProjectTree.NodeDataSize := SizeOf(Cardinal);
   FID := 1;
-  CreateNewProject('Project1', 'E:\TestIDEProject\');
+  CreateNewProject('Project1', '');
   actSaveAll.ShortCut := ShortCut(Ord('S'), [ssCtrl, ssShift]);
 end;
 
@@ -668,8 +743,20 @@ begin
   else
   begin
     Log.Lines.Add('Error in ' + AUnitName + ' line ' + IntToSTr(ALine) + ': ' + AMessage);
+    Inc(FErrors);
   end;
   Log.Refresh;
+end;
+
+procedure TMainForm.HandleCPUViewClose(Sender: TObject; var Action: TCloseAction);
+begin
+  ACtion := caHide;
+  actStop.Execute();
+end;
+
+procedure TMainForm.HandleEmuMessage(AMessage: string);
+begin
+  Log.Lines.Add('Emulator: ' + AMessage);
 end;
 
 procedure TMainForm.OpenProject(AFile: string);
@@ -689,7 +776,6 @@ begin
   FProject.ProjectName := ChangeFileExt(LRoot.Attributes['Name'], '.d16p');
   FProject.ProjectPath := ExtractFilePath(AFile);
   FPeekCompiler.Reset();
-  FPeekCompiler.Initialize();
   FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
   LPNode := ProjectTree.AddChild(nil);
   PNodeData(ProjectTree.GetNodeData(LPNode)).Item := FProject;
@@ -787,37 +873,40 @@ begin
     LUnit := TIdeUnit(PNodeData(ProjectTree.GetNodeData(Node)).Item);
     if Assigned(LUnit) then
     begin
-      CellText := LUnit.Caption;
+      CellText := ChangeFileExt(LUnit.Caption, '.pas');
     end;
   end;
 end;
 
-procedure TMainForm.SaveProject(AFile: string);
-var
-  LDoc: IXMLDocument;
-  LRootNode, LSubNode: iXMLNode;
-  LNode: PVirtualNode;
-  LData: PNodeData;
+function TMainForm.SaveProject(AProject: TProject): Boolean;
 begin
-  LDoc := TXMLDocument.Create(nil);
-  LDoc.Active := True;
-  LRootNode := LDoc.AddChild('Project');
-  LRootNode.Attributes['Name'] := ChangeFileExt(ExtractFileName(AFile), '');
-  LNode := ProjectTree.GetFirstChild(ProjectTree.GetFirst());
-  while Assigned(LNode) do
+  Result := False;
+  if (AProject.ProjectPath = '') or (AProject.ProjectName = '') then
   begin
-    LData := ProjectTree.GetNodeData(LNode);
-    LSubNode := LRootNode.AddChild('Unit');
-    LSubNode.Attributes['Path'] := TIDEUnit(LData.Item).SavePath;
-    LNode := ProjectTree.GetNextSibling(LNode);
+    SaveProjectDialog.Title := 'Save ' +  AProject.ProjectName + ' as';
+    if SaveProjectDialog.Execute then
+    begin
+      AProject.ProjectPath := ExtractFilePath(SaveProjectDialog.FileName);
+      AProject.ProjectName := ChangeFileExt(ExtractFileName(SaveProjectDialog.FileName), '.d16p');
+    end
+    else
+    begin
+      Exit;
+    end;
   end;
-  LDoc.SaveToFile(AFile);
+  AProject.SaveToFile(AProject.ProjectPath + '\' + AProject.ProjectName);
+  Result := True;
 end;
 
-procedure TMainForm.SaveUnit(AUnit: TIDEUnit);
+function TMainForm.SaveUnit(AUnit: TIDEUnit): Boolean;
+var
+  LOldUnitName: string;
 begin
+  Result := False;
+  LOldUnitName := AUnit.Caption;
   if AUnit.SavePath = '' then
   begin
+    SaveUnitDialog.Title := 'Save ' + AUnit.Caption + ' as';
     if SaveUnitDialog.Execute() then
     begin
       AUnit.SavePath := SaveUnitDialog.FileName;
@@ -825,20 +914,16 @@ begin
       begin
         AUnit.SavePath := AUnit.SavePath + '.pas';
       end;
-      AUnit.Caption := ExtractFileName(AUnit.SavePath);
+      AUnit.Caption := ChangeFileExt(ExtractFileName(AUnit.SavePath), '');
     end
     else
     begin
       Exit;
     end;
   end;
-  if SameText(ExtractFileExt(AUnit.SavePath), '') then
-  begin
-    AUnit.SavePath := AUnit.SavePath + '.pas';
-  end;
-  ChangeUnitHeader(AUnit.SynEdit, ChangeFileExt(AUnit.Caption, ''), ChangeFileExt(ExtractFileName(AUnit.SavePath),''));
-  AUnit.Caption := ExtractFileName(AUnit.SavePath);
-  AUnit.SaveToFile(AUnit.SavePath);
+  ChangeUnitHeader(AUnit.SynEdit, LOldUnitName, AUnit.Caption);
+  AUnit.SaveToFile(AUnit.FileName);
+  Result := True;
 end;
 
 procedure TMainForm.SynCompletionProposalExecute(Kind: SynCompletionType;
@@ -858,5 +943,9 @@ begin
     FLastPeek := Now();
   end;
 end;
+
+initialization
+
+Si.Enabled := True;
 
 end.
