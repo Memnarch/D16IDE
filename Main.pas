@@ -8,7 +8,7 @@ uses
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
   JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines, Compiler,
-  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto;
+  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto, SmartInspect;
 
 type
   TNodeData = record
@@ -275,7 +275,8 @@ begin
   SaveUnitDialog.InitialDir := ExtractFilePath(TIDEUnit(LData.Item).SavePath);
   if SaveUnitDialog.Execute() then
   begin
-    TIdeUnit(LData.Item).SavePath := SaveUnitDialog.FileName;
+    TIdeUnit(LData.Item).SavePath := ExtractFilePath(SaveUnitDialog.FileName);
+    TIdeUnit(LData.Item).Caption := ChangeFileExt(ExtractFileName(SaveUnitDialog.FileName), '');
     SaveUnit(TIdeUnit(LData.Item));
   end;
 end;
@@ -351,11 +352,6 @@ begin
     LUnit := TIDEUnit.Create();
   end;
   LUnit.Caption := ATitle;
-//  if SameText(ExtractFileExt(LUnit.Caption), '') then
-//  begin
-//    LUnit.Caption := LUnit.Caption + '.pas';
-//  end;
-//  LUnit.SavePath := FProject.ProjectPath + '\' + LUnit.Caption;
   LUnit.ImageIndex := 1;
   LUnit.Open;
   LUnit.SynEdit.Highlighter := SynPasSyn;
@@ -374,7 +370,6 @@ begin
   begin
     LUnit.LoadFromFile(AFile);
   end;
-//  SaveUnit(LUnit);
 end;
 
 procedure TMainForm.BuildCodeTreeFromUnit(AUnit: TPascalUnit);
@@ -600,7 +595,6 @@ begin
   AddPage('Unit' + IntToSTr(FID));
   Inc(FID);
   ProjectTree.Expanded[LNode] := True;
-//  SaveProject(FProject.ProjectPath + '\' + FProject.ProjectName);
   PageControlChange(PageControl);
 end;
 
@@ -909,12 +903,8 @@ begin
     SaveUnitDialog.Title := 'Save ' + AUnit.Caption + ' as';
     if SaveUnitDialog.Execute() then
     begin
-      AUnit.SavePath := SaveUnitDialog.FileName;
-      if SameText(ExtractFileExt(AUnit.SavePath), '') then
-      begin
-        AUnit.SavePath := AUnit.SavePath + '.pas';
-      end;
-      AUnit.Caption := ChangeFileExt(ExtractFileName(AUnit.SavePath), '');
+      AUnit.SavePath := ExtractFilePath(SaveUnitDialog.FileName);
+      AUnit.Caption := ChangeFileExt(ExtractFileName(SaveUnitDialog.FileName), '');
     end
     else
     begin
