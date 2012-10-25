@@ -8,25 +8,26 @@ uses
 type
   TIDEUnit = class
   private
-    FSynEdit: TSynEdit;
     FSavePath: string;
     FCaption: string;
     FImageIndex: Integer;
-    function GetIsOpen: Boolean;
-    function GetSynEdit: TSynEdit;
+    FSourceLink: TStrings;
+    FOnRename: TNotifyEvent;
     function GetFileName: string;
+    procedure DoOnRename();
+    procedure CheckIfReady();
+    procedure SetSourceLink(const Value: TStrings);
+    procedure SetCaption(const Value: string);
   public
     destructor Destroy(); override;
-    procedure Open();
-    procedure Close();
-    procedure SaveToFile(AFile: string);
-    procedure LoadFromFile(AFile: string);
-    property Caption: string read FCaption write FCaption;
+    procedure Save();
+    procedure Load();
+    property Caption: string read FCaption write SetCaption;
     property SavePath: string read FSavePath write FSavePath;
     property FileName: string read GetFileName;
     property ImageIndex: Integer read FImageIndex write FImageIndex;
-    property SynEdit: TSynEdit read GetSynEdit;
-    property IsOpen: Boolean read GetIsOpen;
+    property SourceLink: TStrings read FSourceLink write SetSourceLink;
+    property OnRename: TNotifyEvent read FOnRename write FOnRename;
   end;
 
 implementation
@@ -36,19 +37,25 @@ uses
 
 { TIDEUnit }
 
-procedure TIDEUnit.Close;
+procedure TIDEUnit.CheckIfReady;
 begin
-  FSynEdit.Free;
-  FSynEdit := nil;
+  if not Assigned(FSourceLink) then
+  begin
+    raise Exception.Create('No SOurceLink assigned');
+  end;
 end;
 
 destructor TIDEUnit.Destroy;
 begin
-  if IsOpen then
-  begin
-    Close();
-  end;
   inherited;
+end;
+
+procedure TIDEUnit.DoOnRename;
+begin
+  if Assigned(FOnRename) then
+  begin
+    FOnRename(Self);
+  end;
 end;
 
 function TIDEUnit.GetFileName: string;
@@ -56,50 +63,31 @@ begin
   Result := ChangeFileExt(IncludeTrailingBackslash(FSavePath) + FCaption, '.pas');
 end;
 
-function TIDEUnit.GetIsOpen: Boolean;
+procedure TIDEUnit.Load;
 begin
-  Result := Assigned(FSynEdit);
+  CheckIfReady();
+  FSourceLink.LoadFromFile(FileName);
 end;
 
-function TIDEUnit.GetSynEdit: TSynEdit;
+procedure TIDEUnit.Save;
 begin
-  Result := FSynEdit;
-  if not Assigned(FSynEdit) then
+  CheckIfReady();
+  FSourceLink.SaveToFile(FileName);
+end;
+
+procedure TIDEUnit.SetCaption(const Value: string);
+begin
+  FCaption := Value;
+  DoOnRename();
+end;
+
+procedure TIDEUnit.SetSourceLink(const Value: TStrings);
+begin
+  FSourceLink := Value;
+  if FileExists(FileName) then
   begin
-    raise Exception.Create('Unit is not open');
+    Load();
   end;
-end;
-
-procedure TIDEUnit.LoadFromFile(AFile: string);
-begin
-  FSynEdit.Lines.LoadFromFile(AFile);
-  FSavePath := ExtractFilePath(AFile);
-  FCaption := ChangeFileExt(ExtractFileName(AFile), '');
-end;
-
-procedure TIDEUnit.Open;
-begin
-  if not IsOpen then
-  begin
-    FSynEdit := TSynEdit.Create(nil);
-    FSynEdit.Name := 'SynEdit';
-    FSynEdit.Gutter.ShowLineNumbers := True;
-    FSynEdit.WantTabs := True;
-    FSynEdit.TabWidth := 2;
-    FSynEdit.Options := FSynEdit.Options - [eoSmartTabs];
-    if (SavePath <> '') and FileExists(FSavePath) then
-    begin
-      FSynEdit.Lines.LoadFromFile(FSavePath);
-    end;
-  end;
-end;
-
-procedure TIDEUnit.SaveToFile(AFile: string);
-begin
-  ForceDirectories(ExcludeTrailingBackslash(ExtractFilePath(AFile)));
-  FSynEdit.Lines.SaveToFile(AFile);
-  FSavePath := ExtractFilePath(AFile);
-  FCaption := ChangeFileExt(ExtractFileName(AFile), '');
 end;
 
 end.

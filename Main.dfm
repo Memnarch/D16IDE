@@ -128,8 +128,6 @@ object MainForm: TMainForm
       TreeOptions.AutoOptions = [toAutoDropExpand, toAutoExpand, toAutoScrollOnExpand, toAutoTristateTracking, toAutoDeleteMovedNodes]
       OnContextPopup = ProjectTreeContextPopup
       OnDblClick = ProjectTreeDblClick
-      OnGetText = ProjectTreeGetText
-      OnGetImageIndex = ProjectTreeGetImageIndex
       Columns = <>
     end
   end
@@ -164,6 +162,7 @@ object MainForm: TMainForm
       ReadOnly = True
       RightEdgeColor = clWhite
       ScrollBars = ssVertical
+      FontSmoothing = fsmNone
     end
   end
   object PageControl: TJvPageControl
@@ -264,7 +263,7 @@ object MainForm: TMainForm
     Left = 216
     Top = 56
     Bitmap = {
-      494C010102002000A80018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102002000BC0018001800FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -568,19 +567,13 @@ object MainForm: TMainForm
       00000000FFFFFFFFFFFF00000000000000000000000000000000000000000000
       000000000000}
   end
-  object SynPasSyn: TSynPasSyn
-    AsmAttri.Foreground = clBlack
-    KeyAttri.Foreground = clNavy
-    Left = 296
-    Top = 56
-  end
   object ToolBarImages: TImageList
     Height = 32
     Width = 32
     Left = 216
     Top = 168
     Bitmap = {
-      494C0101030008009C0020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010103000800B00020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

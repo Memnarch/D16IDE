@@ -8,19 +8,15 @@ uses
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
   JvComponentBase, xmldom, XMLIntf, msxmldom, XMLDoc, Project,  IDEUnit, CompilerDefines, Compiler,
-  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto, SmartInspect;
+  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto, SmartInspect,
+  WatchViewForm, IDETabSheet, IDEPageFrame, ProjectTreeController;
 
 type
-  TNodeData = record
-    Item: TObject;
-  end;
-
   TCodeNodeData = record
     Caption: string;
     Line: Integer;
   end;
 
-  PNodeData = ^TNodeData;
   PCodeNodeData = ^TCodeNodeData;
 
   TMainForm = class(TForm)
@@ -33,7 +29,6 @@ type
     SplitterRight: TSplitter;
     TreeImages: TImageList;
     ProjectTree: TVirtualStringTree;
-    SynPasSyn: TSynPasSyn;
     Panel1: TPanel;
     Splitter1: TSplitter;
     Log: TSynMemo;
@@ -95,11 +90,6 @@ type
     Run1: TMenuItem;
     Stop1: TMenuItem;
     procedure FormCreate(Sender: TObject);
-    procedure ProjectTreeGetImageIndex(Sender: TBaseVirtualTree;
-      Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var ImageIndex: Integer);
-    procedure ProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
-      Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure actNewUnitExecute(Sender: TObject);
     procedure PageControlContextPopup(Sender: TObject; MousePos: TPoint;
       var Handled: Boolean);
@@ -134,16 +124,13 @@ type
     FPeekCompiler: TCompiler;
     FLastPeek: TDateTime;
     FCpuView: TCPUView;
+    FWatchView: TWatchView;
     FEmulator: TD16Emulator;
+    FProjectTreeController: TProjectTreeController;
     FErrors: Cardinal;
     function SaveUnit(AUnit: TIDEUnit): Boolean;
     function GetTabIndexBelowCursor(): Integer;
-    function GetTabIndexBySynEdit(AEdit: TSynEdit): Integer;
-    function GetTreeNodeBySynEdit(AEdit: TSynEdit): PVirtualNode;
-    function GetTreeNodeByUnit(AUnit: TIDEUnit): PVirtualNode;
-    function GetActiveSynEdit(): TSynEdit;
     function SaveProject(AProject: TProject): Boolean;
-    procedure ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
     procedure AddPage(ATitle: string; AFile: string = ''; AUnit: TIDEUnit = nil);
     procedure ClosePage(AIndex: Integer);
     procedure CreateNewProject(ATitle: string; AProjectFolder: string);
@@ -155,7 +142,7 @@ type
     procedure BuildCodeTreeFromUnit(AUnit: TPascalUnit);
     procedure BuildCompletionLists(ACompletion, AInsert: TStrings);
     function FormatCompletPropString(ACategory, AIdentifier, AType: string): string;
-    function GetActiveIDEUnit(): TIDEUnit;
+    function GetActiveIDEPage(): TIDEPage;
     procedure HandleCPUViewClose(Sender: TObject; var Action: TCloseAction);
     procedure HandleEmuMessage(AMessage: string);
   public
@@ -226,10 +213,15 @@ end;
 procedure TMainForm.actPeekCompileExecute(Sender: TObject);
 var
   LUnit: TPascalUnit;
+  LPage: TIDEPage;
 begin
-  if FPeekCompiler.PeekCompile(GetActiveSynEdit().Lines.Text, PageControl.ActivePage.Caption, LUnit) then
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
   begin
-    BuildCodeTreeFromUnit(LUnit);
+    if FPeekCompiler.PeekCompile(LPage.IDEEdit.Text, LPage.IDEUnit.Caption, LUnit) then
+    begin
+      BuildCodeTreeFromUnit(LUnit);
+    end;
   end;
 end;
 
@@ -255,10 +247,12 @@ begin
     actStop.Enabled := True;
     FCPUView.LoadASMFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.asm'));
     FCPUView.Show;
+    FWatchView.Show;
     Log.Clear;
     FEmulator := TD16Emulator.Create();
     FEmulator.OnMessage := HandleEmuMessage;
     FCpuView.SetEmulator(FEmulator);
+    FWatchView.SetEmulator(FEmulator);
     Log.Lines.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16')));
     FEmulator.LoadFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16'), FProject.UseBigEndian);
     FEmulator.Run();
@@ -266,44 +260,39 @@ begin
 end;
 
 procedure TMainForm.actSaveActiveAsExecute(Sender: TObject);
-var
-  LNode: PVirtualNode;
-  LData: PNodeData;
+//var
+//  LNode: PVirtualNode;
+//  LData: PNodeData;
 begin
-  LNode := GetTreeNodeBySynEdit(GetActiveSynEdit);
-  LData := ProjectTree.GetNodeData(LNode);
-  SaveUnitDialog.InitialDir := ExtractFilePath(TIDEUnit(LData.Item).SavePath);
-  if SaveUnitDialog.Execute() then
-  begin
-    TIdeUnit(LData.Item).SavePath := ExtractFilePath(SaveUnitDialog.FileName);
-    TIdeUnit(LData.Item).Caption := ChangeFileExt(ExtractFileName(SaveUnitDialog.FileName), '');
-    SaveUnit(TIdeUnit(LData.Item));
-  end;
+//  LNode := GetTreeNodeBySynEdit(GetActiveSynEdit);
+//  LData := ProjectTree.GetNodeData(LNode);
+//  SaveUnitDialog.InitialDir := ExtractFilePath(TIDEUnit(LData.Item).SavePath);
+//  if SaveUnitDialog.Execute() then
+//  begin
+//    TIdeUnit(LData.Item).SavePath := ExtractFilePath(SaveUnitDialog.FileName);
+//    TIdeUnit(LData.Item).Caption := ChangeFileExt(ExtractFileName(SaveUnitDialog.FileName), '');
+//    SaveUnit(TIdeUnit(LData.Item));
+//  end;
 end;
 
 procedure TMainForm.actSaveActiveExecute(Sender: TObject);
 var
-  LNode: PVirtualNode;
-  LData: PNodeData;
+  LPage: TIDEPage;
 begin
-  LNode := GetTreeNodeBySynEdit(GetActiveSynEdit());
-  LData := ProjectTree.GetNodeData(LNode);
-  SaveUnit(TIDEUnit(LData.Item));
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    SaveUnit(LPage.IDEUnit);
+  end;
 end;
 
 procedure TMainForm.actSaveAllExecute(Sender: TObject);
 var
-  i: Integer;
-  LNode: PVirtualNode;
+  LUnit: TIDEUnit;
 begin
-  for i := 0 to PageControl.PageCount - 1 do
+  for LUnit in FProject.Units do
   begin
-    LNode := GetTreeNodeBySynEdit(TSynEdit(PageControl.Pages[i].FindChildControl('SynEdit')));
-    if not SaveUnit(TIDEUnit(PNodeData(ProjectTree.GetNodeData(LNode)).Item)) then
-    begin
-      actSaveAll.Tag := Integer(False);
-      Exit;
-    end;
+    SaveUnit(LUnit);
   end;
   if SaveProject(FProject) then
   begin
@@ -331,17 +320,15 @@ begin
   actRun.Enabled := True;
   actStop.Enabled := False;
   FCPUView.Hide;
+  FWatchView.Hide;
 end;
 
 procedure TMainForm.AddPage(ATitle: string; AFile: string = ''; AUnit: TIDEUnit = nil);
 var
-  LPage: TTabSheet;
+  LPage: TIDETabSheet;
   LUnit: TIDEUnit;
-  LNode: PVirtualNode;
 begin
-  LPage := TTabSheet.Create(Self);
-  LPage.PageControl := PageControl;
-  LPage.Caption := ChangeFileExt(ATitle, '');
+  LPage := TIDETabSheet.Create(Self, PageControl);
 
   if Assigned(AUnit) then
   begin
@@ -351,25 +338,11 @@ begin
   begin
     LUnit := TIDEUnit.Create();
   end;
+  LPage.IDEPage.IDEUnit := LUnit;
+  LPage.IDEPage.IDEEdit.OnKeyDown := HandleSynEditKeyDown;
   LUnit.Caption := ATitle;
   LUnit.ImageIndex := 1;
-  LUnit.Open;
-  LUnit.SynEdit.Highlighter := SynPasSyn;
-  LUnit.SynEdit.Lines.Text := 'unit ' + ATitle + ';' + sLineBreak + sLineBreak + sLineBreak + sLineBreak + sLineBreak + sLineBreak + 'end.';
-  LUnit.SynEdit.Parent := LPage;
-  LUnit.SynEdit.Align := alClient;
-  LUnit.SynEdit.OnKeyDown := HandleSynEditKeyDown;
-  LNode := GetTreeNodeByUnit(LUnit);
-  if not Assigned(LNode) then
-  begin
-    LNode := ProjectTree.AddChild(ProjectTree.GetFirst());
-  end;
-  PNodeData(ProjectTree.GetNodeData(LNode)).Item := LUnit;
   FProject.Units.Add(LUnit);
-  if AFile <> '' then
-  begin
-    LUnit.LoadFromFile(AFile);
-  end;
 end;
 
 procedure TMainForm.BuildCodeTreeFromUnit(AUnit: TPascalUnit);
@@ -443,7 +416,7 @@ var
 begin
   ACompletion.Clear;
   AInsert.Clear;
-  LUnitName := ChangeFileExt(GetActiveIDEUnit().Caption, '');
+  LUnitName := ChangeFileExt(GetActiveIDEPage().IDEUnit.Caption, '');
   LActiveUnit :=  FPeekCompiler.GetUnitByName(LUnitName);
   if not Assigned(LActiveUnit) then
   begin
@@ -492,24 +465,11 @@ begin
   end;
 end;
 
-procedure TMainForm.ChangeUnitHeader(AEdit: TSynEdit; AOld, ANew: string);
-var
-  LIndex: Integer;
-begin
-  AEdit.Text := StringReplace(AEdit.Text, 'unit ' + AOld + ';', 'unit ' + ANew + ';', [rfIgnoreCase]);
-  LIndex := GetTabIndexBySynEdit(AEdit);
-  if LIndex > -1 then
-  begin
-    PageControl.Pages[Lindex].Caption := ANew;
-  end;
-  ProjectTree.Repaint();
-end;
-
 procedure TMainForm.ClearProjects;
 var
   i: Integer;
 begin
-  ProjectTree.Clear;
+  FProjectTreeController.Project := nil;
   if Assigned(FProject) then
   begin
     FProject.Units.Clear;
@@ -522,28 +482,28 @@ begin
 end;
 
 procedure TMainForm.ClosePage(AIndex: Integer);
-var
-  LNode: PVirtualNode;
-  LEdit: TSynEdit;
-  LPage: TTabSheet;
-  LData: PNodeData;
+//var
+//  LNode: PVirtualNode;
+//  LEdit: TSynEdit;
+//  LPage: TTabSheet;
+//  LData: PNodeData;
 begin
-  LPage := PageControl.Pages[AIndex];
-  LEdit := TSynEdit(LPage.FindChildControl('SynEdit'));
-  LNode := GetTreeNodeBySynEdit(LEdit);
-  if Assigned(LNode) then
-  begin
-    LData := ProjectTree.GetNodeData(LNode);
-    SaveUnit(TIdeUnit(LData.Item));
-    TIdeUnit(LData.Item).Close;
-    LPage.Free;
-  end;
+//  LPage := PageControl.Pages[AIndex];
+//  LEdit := TSynEdit(LPage.FindChildControl('SynEdit'));
+//  LNode := GetTreeNodeBySynEdit(LEdit);
+//  if Assigned(LNode) then
+//  begin
+//    LData := ProjectTree.GetNodeData(LNode);
+//    SaveUnit(TIdeUnit(LData.Item));
+//    LPage.Free;
+//  end;
 end;
 
 procedure TMainForm.CodeTreeDblClick(Sender: TObject);
 var
   LNode: PVirtualNode;
   LPos: TPoint;
+  LPage: TIDEPage;
 begin
   GetCursorPos(LPos);
   LPos := CodeTree.ScreenToClient(LPos);
@@ -552,8 +512,12 @@ begin
   begin
     if PCodeNodeData(CodeTree.GetNodeData(LNode)).Line >= 0 then
     begin
-      GetActiveSynEdit().SetFocus;
-      GetActiveSynEdit().CaretY := PCodeNodeData(CodeTree.GetNodeData(LNode)).Line;
+      LPage := GetActiveIDEPage();
+      if Assigned(LPage) then
+      begin
+        LPage.IDEEdit.SetFocus;
+        LPAge.IDEEdit.CaretY := PCodeNodeData(CodeTree.GetNodeData(LNode)).Line;
+      end;
     end;
   end;
 end;
@@ -574,28 +538,26 @@ begin
   FCpuView.Parent := Self;
   FCPuView.Align := alRight;
   FCPUView.OnClose := HandleCPUViewClose;
+  FWatchView := TWatchView.Create(Self);
+  FWatchView.Parent := plLeft;
+  FWatchView.Align := alBottom;
+  FWatchView.ValueListEditor1.InsertRow('LTest', '0', True);
   CodeTree.NodeDataSize := SizeOf(TCodeNodeData);
+  FProjectTreeController := TProjectTreeController.Create(ProjectTree);
   FLastPeek := Now();
 end;
 
 procedure TMainForm.CreateNewProject(ATitle, AProjectFolder: string);
-var
-  LNode: PVirtualNode;
-  LData: PNodeData;
 begin
   ClearProjects();
   FProject := TProject.Create();
-  LNode := ProjectTree.AddChild(nil);
   FProject.ProjectPath := AProjectFolder;
   FProject.ProjectName := ChangeFileExt(ATitle,'.d16p');
   FPeekCompiler.Reset();
-//  FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
-  LData := ProjectTree.GetNodeData(LNode);
-  LData.Item := FProject;
   AddPage('Unit' + IntToSTr(FID));
   Inc(FID);
-  ProjectTree.Expanded[LNode] := True;
   PageControlChange(PageControl);
+  FProjectTreeController.Project := FProject;
 end;
 
 destructor TMainForm.Destroy;
@@ -632,25 +594,16 @@ begin
   actSaveAll.ShortCut := ShortCut(Ord('S'), [ssCtrl, ssShift]);
 end;
 
-function TMainForm.GetActiveSynEdit: TSynEdit;
-begin
-  Result := TSynEdit(PageControl.Pages[PageControl.ActivePageIndex].FindChildControl('SynEdit'));
-end;
-
-function TMainForm.GetActiveIDEUnit: TIDEUnit;
+function TMainForm.GetActiveIDEPage: TIDEPage;
 var
   i: Integer;
-  LEdit: TSynEdit;
+  LIDETab: TIDETabSheet;
 begin
-  Result := FProject.Units.Items[0];
-  LEdit := GetActiveSynEdit();
-  for i := 0 to FProject.Units.Count - 1 do
+  Result := nil;
+  LIDETab := TIDETabSheet(PageControl.ActivePage);
+  if Assigned(LIDETab) then
   begin
-    if LEdit = FProject.Units.Items[i].SynEdit then
-    begin
-      Result := FProject.Units.Items[i];
-      Break;
-    end;
+    Result := LIDETab.IDEPage;
   end;
 end;
 
@@ -673,57 +626,6 @@ begin
       Result := i;
       Break;
     end;
-  end;
-end;
-
-function TMainForm.GetTabIndexBySynEdit(AEdit: TSynEdit): Integer;
-var
-  i: Integer;
-begin
-  Result := 0;
-  for i := 1 to PageControl.PageCount - 1 do
-  begin
-    if PageControl.Pages[i].FindChildControl('SynEdit') = AEdit then
-    begin
-      Result := i;
-      Break;
-    end;
-  end;
-end;
-
-function TMainForm.GetTreeNodeBySynEdit(AEdit: TSynEdit): PVirtualNode;
-var
-  LNode: PVirtualNode;
-  LData: PNodeData;
-begin
-  Result := nil;
-  LNode := ProjectTree.GetFirstChild(ProjectTree.GetFirst());
-  while Assigned(LNode) do
-  begin
-    LData := ProjectTree.GetNodeData(LNode);
-    if AEdit = TIdeUnit(LData.Item).SynEdit then
-    begin
-      Result := LNode;
-      Break;
-    end;
-    LNode := ProjectTree.GetNextSibling(LNode);
-  end;
-end;
-
-function TMainForm.GetTreeNodeByUnit(AUnit: TIDEUnit): PVirtualNode;
-var
-  LNode: PVirtualNode;
-begin
-  Result := nil;
-  LNode := ProjectTree.GetFirstChild(ProjectTree.GetFirst());
-  while Assigned(LNode) do
-  begin
-    if TIdeUnit(PNodeData(ProjectTree.GetNodeData(LNode)).Item) = AUNit then
-    begin
-      Result := LNode;
-      Break;
-    end;
-    LNode := ProjectTree.GetNextSibling(LNode);
   end;
 end;
 
@@ -759,7 +661,7 @@ var
   LNode, LRoot: IXMLNode;
   i: Integer;
   LPath: string;
-  LPNode: PVirtualNode;
+  LPage: TIDEPage;
 begin
   ClearProjects();
   LDoc := TXMLDocument.Create(nil);
@@ -771,21 +673,30 @@ begin
   FProject.ProjectPath := ExtractFilePath(AFile);
   FPeekCompiler.Reset();
   FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
-  LPNode := ProjectTree.AddChild(nil);
-  PNodeData(ProjectTree.GetNodeData(LPNode)).Item := FProject;
   for i := 0 to LRoot.ChildNodes.Count - 1 do
   begin
     LNode := LRoot.ChildNodes.Nodes[i];
     LPath := LNode.Attributes['Path'];
     AddPage(ExtractFileName(LPath), LPath);
   end;
-  SynCompletionProposal.Editor := GetActiveSynEdit();
+  FProjectTreeController.Project := FProject;
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    SynCompletionProposal.Editor := LPage.IDEEdit;
+  end;
 end;
 
 procedure TMainForm.PageControlChange(Sender: TObject);
+var
+  LPage: TIDEPage;
 begin
   actPeekCompile.Execute();
-  SynCompletionProposal.Editor := GetActiveSynEdit();
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    SynCompletionProposal.Editor := LPage.IDEEdit;
+  end;
 end;
 
 procedure TMainForm.PageControlContextPopup(Sender: TObject; MousePos: TPoint;
@@ -821,56 +732,30 @@ end;
 procedure TMainForm.ProjectTreeDblClick(Sender: TObject);
 var
   LPos: TPoint;
-  LNode: PVirtualNode;
-  LData: PNodeData;
+//  LNode: PVirtualNode;
+//  LData: PNodeData;
 begin
   GetCursorPos(LPos);
-  LPos := ProjectTree.ScreenToClient(LPos);
-  LNode := ProjectTree.GetNodeAt(LPos.X, LPos.Y);
-  if Assigned(LNode) then
-  begin
-    if LNode = ProjectTree.GetFirst() then
-    begin
-      Exit;
-    end;
-    LData := ProjectTree.GetNodeData(LNode);
-    if Assigned(LData) then
-    begin
-      if not TIdeUnit(LData.Item).IsOpen then
-      begin
-        AddPage(TIdeUnit(LData.Item).Caption, TIdeUnit(LData.Item).SavePath, TIdeUnit(LData.Item));
-      end;
-      PageControl.ActivePageIndex := GetTabIndexBySynEdit(TIdeUnit(LData.Item).SynEdit);
-    end;
-  end;
+//  LPos := ProjectTree.ScreenToClient(LPos);
+//  LNode := ProjectTree.GetNodeAt(LPos.X, LPos.Y);
+//  if Assigned(LNode) then
+//  begin
+//    if LNode = ProjectTree.GetFirst() then
+//    begin
+//      Exit;
+//    end;
+//    LData := ProjectTree.GetNodeData(LNode);
+//    if Assigned(LData) then
+//    begin
+//      if not TIdeUnit(LData.Item).IsOpen then
+//      begin
+//        AddPage(TIdeUnit(LData.Item).Caption, TIdeUnit(LData.Item).SavePath, TIdeUnit(LData.Item));
+//      end;
+//      PageControl.ActivePageIndex := GetTabIndexBySynEdit(TIdeUnit(LData.Item).SynEdit);
+//    end;
+//  end;
 end;
 
-procedure TMainForm.ProjectTreeGetImageIndex(Sender: TBaseVirtualTree;
-  Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var ImageIndex: Integer);
-begin
-//  ImageIndex := PNodeData(Sender.GetNodeData(Node)).ImageIndex;
-end;
-
-procedure TMainForm.ProjectTreeGetText(Sender: TBaseVirtualTree;
-  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var CellText: string);
-var
-  LUnit: TIdeUnit;
-begin
-  if Node = ProjectTree.GetFirst() then
-  begin
-    CellText := FProject.ProjectName;
-  end
-  else
-  begin
-    LUnit := TIdeUnit(PNodeData(ProjectTree.GetNodeData(Node)).Item);
-    if Assigned(LUnit) then
-    begin
-      CellText := ChangeFileExt(LUnit.Caption, '.pas');
-    end;
-  end;
-end;
 
 function TMainForm.SaveProject(AProject: TProject): Boolean;
 begin
@@ -911,8 +796,7 @@ begin
       Exit;
     end;
   end;
-  ChangeUnitHeader(AUnit.SynEdit, LOldUnitName, AUnit.Caption);
-  AUnit.SaveToFile(AUnit.FileName);
+  AUnit.Save();
   Result := True;
 end;
 
