@@ -59,13 +59,10 @@ begin
   LDoc.Active := True;
   LRootNode := LDoc.AddChild('Project');
   LRootNode.Attributes['Name'] := ChangeFileExt(ExtractFileName(AFile), '');
-//  LNode := ProjectTree.GetFirstChild(ProjectTree.GetFirst());
-//  while Assigned(LNode) do
-//  begin
   for LUnit in FUnits do
   begin
     LSubNode := LRootNode.AddChild('Unit');
-    LSubNode.Attributes['Path'] := LUnit.FileName;
+    LSubNode.Attributes['Path'] := ExtractRelativePath(FProjectPath, LUnit.FileName);
   end;
   LDoc.SaveToFile(AFile);
 end;

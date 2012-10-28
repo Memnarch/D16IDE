@@ -15,7 +15,11 @@ uses
   IDETabSheet in 'IDETabSheet.pas',
   UnitTemplates in 'UnitTemplates.pas',
   ProjectTreeController in 'ProjectTreeController.pas',
-  SimpleRefactor in 'SimpleRefactor.pas';
+  SimpleRefactor in 'SimpleRefactor.pas',
+  CodeTreeController in 'CodeTreeController.pas',
+  IDEModule in 'IDEModule.pas' {IDEData: TDataModule},
+  IDEController in 'IDEController.pas',
+  IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule};
 
 {$R *.res}
 
@@ -23,6 +27,5 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMainForm, MainForm);
-  Application.CreateForm(TProjectOption, ProjectOption);
   Application.Run;
 end.

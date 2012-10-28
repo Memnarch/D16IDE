@@ -75,6 +75,7 @@ begin
   FIDEUnit := Value;
   FIDEUnit.SourceLink := FIDEEdit.Lines;
   FIDEUnit.OnRename := HandleOnRename;
+  DoOnUnitRenamed();
 end;
 
 end.
