@@ -10,3 +10,6 @@ https://github.com/Memnarch/D16IDE
 
 For further questions, you find me on github:
 https://github.com/Memnarch
+
+Special thanks to Yusuke Kamiyamane for his awesome collection of icons, designed by himself, which is used in this project.
+His Website: http://p.yusukekamiyamane.com/
