@@ -65,6 +65,8 @@ type
     procedure Copy();
     procedure Paste();
     procedure Search();
+    procedure FindNext();
+    procedure FindPrevious();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
@@ -269,6 +271,28 @@ destructor TIDEController.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TIDEController.FindNext;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.FindNext();
+  end;
+end;
+
+procedure TIDEController.FindPrevious;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.FindPrevious();
+  end;
 end;
 
 procedure TIDEController.FokusIDEPageByUnit(AUnit: TIDEUnit);

@@ -24,6 +24,8 @@ type
     constructor Create(AOwner: TComponent); override;
     procedure ShowSearch();
     procedure HideSearch();
+    procedure FindNext();
+    procedure FindPrevious();
     property IsPartOfProject: Boolean read GetIsPartOfProject;
     property NeedsSaving: Boolean read GetNeedsSaving;
     property IDEEdit: TIDEEdit read FIDEEdit;
@@ -59,6 +61,16 @@ begin
   begin
     FOnUnitRenamed(FIDEUnit);
   end;
+end;
+
+procedure TIDEPage.FindNext;
+begin
+  FSearchForm.FindNext();
+end;
+
+procedure TIDEPage.FindPrevious;
+begin
+  FSearchForm.FindPrevious();
 end;
 
 function TIDEPage.GetIsPartOfProject: Boolean;

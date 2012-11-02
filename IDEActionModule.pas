@@ -34,6 +34,8 @@ type
     actRedo: TAction;
     actFind: TAction;
     actReplace: TAction;
+    actFindNext: TAction;
+    actFindPrevious: TAction;
     procedure actNewUnitExecute(Sender: TObject);
     procedure actCloseUnitByTabExecute(Sender: TObject);
     procedure actSaveActiveExecute(Sender: TObject);
@@ -57,6 +59,8 @@ type
     procedure actCopyExecute(Sender: TObject);
     procedure actPasteExecute(Sender: TObject);
     procedure actFindExecute(Sender: TObject);
+    procedure actFindNextExecute(Sender: TObject);
+    procedure actFindPreviousExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
@@ -119,6 +123,16 @@ end;
 procedure TIDEActions.actFindExecute(Sender: TObject);
 begin
   FController.Search();
+end;
+
+procedure TIDEActions.actFindNextExecute(Sender: TObject);
+begin
+  FController.FindNext();
+end;
+
+procedure TIDEActions.actFindPreviousExecute(Sender: TObject);
+begin
+  FController.FindPrevious();
 end;
 
 procedure TIDEActions.actNewProjectExecute(Sender: TObject);

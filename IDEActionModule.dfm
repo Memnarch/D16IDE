@@ -135,5 +135,15 @@ object IDEActions: TIDEActions
       Caption = 'actReplace'
       ImageIndex = 15
     end
+    object actFindNext: TAction
+      Caption = 'actFindNext'
+      ShortCut = 114
+      OnExecute = actFindNextExecute
+    end
+    object actFindPrevious: TAction
+      Caption = 'actFindPrevious'
+      ShortCut = 8306
+      OnExecute = actFindPreviousExecute
+    end
   end
 end

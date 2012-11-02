@@ -4,13 +4,15 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, SynEdit, SynEditMiscClasses, SynEditSearch, SynEditTypes;
+  Dialogs, StdCtrls, SynEdit, SynEditMiscClasses, SynEditSearch, SynEditTypes,
+  ImgList;
 
 type
   TSimpleSearchForm = class(TFrame)
     edFind: TEdit;
     btnPrevious: TButton;
     btnNext: TButton;
+    SearchImages: TImageList;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure edFindKeyPress(Sender: TObject; var Key: Char);
     procedure btnNextClick(Sender: TObject);
@@ -25,6 +27,8 @@ type
   public
     { Public declarations }
     constructor Create(AOwner: TComponent; AScope: TSynEdit); reintroduce;
+    procedure FindNext();
+    procedure FindPrevious();
   end;
 implementation
 
@@ -37,22 +41,12 @@ uses
 
 procedure TSimpleSearchForm.btnNextClick(Sender: TObject);
 begin
-  UpdateSearch();
-  if FIndex + 1 < FScope.SearchEngine.ResultCount then
-  begin
-    Inc(FIndex);
-    SelectIndex(FIndex);
-  end;
+  FindNext();
 end;
 
 procedure TSimpleSearchForm.btnPreviousClick(Sender: TObject);
 begin
-  UpdateSearch();
-  if (FIndex - 1 >= 0) then
-  begin
-    Dec(FIndex);
-    SelectIndex(FIndex);
-  end;
+  FindPrevious();
 end;
 
 constructor TSimpleSearchForm.Create(AOwner: TComponent;
@@ -82,6 +76,32 @@ begin
       end;
     end;
     Key := #0;
+  end;
+end;
+
+procedure TSimpleSearchForm.FindNext;
+begin
+  if Visible then
+  begin
+    UpdateSearch();
+    if FIndex + 1 < FScope.SearchEngine.ResultCount then
+    begin
+      Inc(FIndex);
+      SelectIndex(FIndex);
+    end;
+  end;
+end;
+
+procedure TSimpleSearchForm.FindPrevious;
+begin
+  if Visible then
+  begin
+    UpdateSearch();
+    if (FIndex - 1 >= 0) then
+    begin
+      Dec(FIndex);
+      SelectIndex(FIndex);
+    end;
   end;
 end;
 
