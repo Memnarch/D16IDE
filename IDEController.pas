@@ -27,6 +27,7 @@ type
   //events
     procedure PageControlChange(Sender: TObject);
     function GetIsRunning: Boolean;
+    procedure SetIDEData(const Value: TIDEData);
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -57,10 +58,17 @@ type
     procedure PeekCompile();
     procedure Run();
     procedure Stop();
+    procedure Pause();
+    procedure Undo();
+    procedure Redo();
+    procedure Cut();
+    procedure Copy();
+    procedure Paste();
+    procedure Search();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
-    property IDEData: TIDEData read FIDEData write FIDEData;
+    property IDEData: TIDEData read FIDEData write SetIDEData;
   end;
 
 implementation
@@ -203,6 +211,17 @@ begin
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
 end;
 
+procedure TIDEController.Copy;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.IDEEdit.CopyToClipboard;
+  end;
+end;
+
 constructor TIDEController.Create;
 begin
   inherited Create(AOwner);
@@ -233,6 +252,17 @@ begin
   Inc(FID);
   PageControlChange(FPageControl);
   FProjectTreeController.Project := FProject;
+end;
+
+procedure TIDEController.Cut;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.IDEEdit.CutToClipboard;
+  end;
 end;
 
 destructor TIDEController.Destroy;
@@ -401,6 +431,25 @@ begin
   end;
 end;
 
+procedure TIDEController.Paste;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.IDEEdit.PasteFromClipboard;
+  end;
+end;
+
+procedure TIDEController.Pause;
+begin
+  if IsRunning then
+  begin
+    FEmulator.Pause();
+  end;
+end;
+
 procedure TIDEController.PeekCompile;
 var
   LUnit: TPascalUnit;
@@ -416,18 +465,32 @@ begin
   end;
 end;
 
+procedure TIDEController.Redo;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.IDEEdit.Redo;
+  end;
+end;
+
 procedure TIDEController.Run;
 begin
-  FCPUView.LoadASMFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.asm'));
-  FCPUView.Show;
-  FWatchView.Show;
-  FLog.Clear;
-  FEmulator := TD16Emulator.Create();
-  FEmulator.OnMessage := HandleEmuMessage;
-  FCpuView.SetEmulator(FEmulator);
-  FWatchView.SetEmulator(FEmulator);
-  FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16')));
-  FEmulator.LoadFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16'), FProject.UseBigEndian);
+  if not IsRunning then
+  begin
+    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.asm'));
+    FCPUView.Show;
+    FWatchView.Show;
+    FLog.Clear;
+    FEmulator := TD16Emulator.Create();
+    FEmulator.OnMessage := HandleEmuMessage;
+    FCpuView.SetEmulator(FEmulator);
+    FWatchView.SetEmulator(FEmulator);
+    FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16')));
+    FEmulator.LoadFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16'), FProject.UseBigEndian);
+  end;
   FEmulator.Run();
 end;
 
@@ -474,6 +537,23 @@ begin
   Result := True;
 end;
 
+procedure TIDEController.Search;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.ShowSearch();
+  end;
+end;
+
+procedure TIDEController.SetIDEData(const Value: TIDEData);
+begin
+  FIDEData := Value;
+  FProjectTreeController.Images := FIDEData.TreeImages;
+end;
+
 procedure TIDEController.Stop;
 begin
   if Assigned(FEmulator) then
@@ -486,6 +566,17 @@ begin
   end;
   FCPUView.Hide;
   FWatchView.Hide;
+end;
+
+procedure TIDEController.Undo;
+var
+  LPage: TIDEPage;
+begin
+  LPage := GetActiveIDEPage();
+  if Assigned(LPage) then
+  begin
+    LPage.IDEEdit.Undo();
+  end;
 end;
 
 end.

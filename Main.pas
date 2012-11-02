@@ -10,7 +10,7 @@ uses
   JvComponentBase, Project,  IDEUnit, CompilerDefines, Compiler,
   PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto, SmartInspect,
   WatchViewForm, IDETabSheet, IDEPageFrame, ProjectTreeController, CodeTreeController, IDEModule,
-  IDEController, IDEActionModule;
+  IDEController, IDEActionModule, SynEditMiscClasses, SynEditSearch;
 
 type
   TMainForm = class(TForm)
@@ -25,7 +25,6 @@ type
     Panel1: TPanel;
     Splitter1: TSplitter;
     Log: TSynMemo;
-    btnCompile: TToolButton;
     Edit1: TMenuItem;
     Search1: TMenuItem;
     Project1: TMenuItem;
@@ -57,6 +56,25 @@ type
     miRun: TMenuItem;
     miStop: TMenuItem;
     ControlBar: TControlBar;
+    btnPause: TToolButton;
+    tbDebug: TToolBar;
+    btnStep: TToolButton;
+    btnStepOver: TToolButton;
+    btnStepUntilReturn: TToolButton;
+    tbFile: TToolBar;
+    btnNewUnit: TToolButton;
+    btnSave: TToolButton;
+    btnSaveAll: TToolButton;
+    tbEdit: TToolBar;
+    btnCopy: TToolButton;
+    btnCut: TToolButton;
+    btnPaste: TToolButton;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    tbSearch: TToolBar;
+    ToolButton4: TToolButton;
+    ToolButton5: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeDblClick(Sender: TObject);
     procedure ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
@@ -115,25 +133,30 @@ end;
 
 procedure TMainForm.BindActions;
 begin
-  //toolbar
-  btnCompile.Action := FIDEActions.actCompile;
-  btnRun.Action := FIDEActions.actRun;
-  btnStop.Action := FIDEActions.actStop;
-  //menubar
-  //file
-  miNewUnit.Action := FIDEActions.actNewUnit;
-  miNewProject.Action := FIDEActions.actNewProject;
-  miSave.Action := FIDEActions.actSaveActive;
-  miSaveAs.Action := FIDEActions.actSaveActiveAs;
-  miSaveProjectAs.Action := FIDEActions.actSaveProjectAs;
-  miSaveAll.Action := FIDEActions.actSaveAll;
-  miOpen.Action := FIDEActions.actOpenProject;
-  miExit.Action := FIDEActions.actExit;
-  //project
-  miCompile.Action := FIDEActions.actCompile;
-  miRun.Action := FIDEActions.actRun;
-  miStop.Action := FIDEActions.actStop;
-  miOptions.Action := FIDEActions.actProjectOptions;
+//  //toolbar
+//  //run
+////  btnRun.Action := FIDEActions.actRun;
+//  btnPause.Action := FIDEActions.actPause;
+//  btnStop.Action := FIDEActions.actStop;
+//  //Debug
+//  btnStep.Action := FIDEActions.actStep;
+//  btnStepOver.Action := FIDEActions.actStepOver;
+//  btnStepUntilReturn.Action := FIDEActions.actStepUntilReturn;
+//  //menubar
+//  //file
+//  miNewUnit.Action := FIDEActions.actNewUnit;
+//  miNewProject.Action := FIDEActions.actNewProject;
+//  miSave.Action := FIDEActions.actSaveActive;
+//  miSaveAs.Action := FIDEActions.actSaveActiveAs;
+//  miSaveProjectAs.Action := FIDEActions.actSaveProjectAs;
+//  miSaveAll.Action := FIDEActions.actSaveAll;
+//  miOpen.Action := FIDEActions.actOpenProject;
+//  miExit.Action := FIDEActions.actExit;
+//  //project
+//  miCompile.Action := FIDEActions.actCompile;
+//  miRun.Action := FIDEActions.actRun;
+//  miStop.Action := FIDEActions.actStop;
+//  miOptions.Action := FIDEActions.actProjectOptions;
 end;
 
 procedure TMainForm.CodeTreeDblClick(Sender: TObject);

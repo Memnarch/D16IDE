@@ -23,6 +23,17 @@ type
     actRun: TAction;
     actStop: TAction;
     actExit: TAction;
+    actPause: TAction;
+    actStep: TAction;
+    actStepOver: TAction;
+    actStepUntilReturn: TAction;
+    actCopy: TAction;
+    actCut: TAction;
+    actPaste: TAction;
+    actUndo: TAction;
+    actRedo: TAction;
+    actFind: TAction;
+    actReplace: TAction;
     procedure actNewUnitExecute(Sender: TObject);
     procedure actCloseUnitByTabExecute(Sender: TObject);
     procedure actSaveActiveExecute(Sender: TObject);
@@ -39,6 +50,13 @@ type
     procedure actStopExecute(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
+    procedure actPauseExecute(Sender: TObject);
+    procedure actUndoExecute(Sender: TObject);
+    procedure actRedoExecute(Sender: TObject);
+    procedure actCutExecute(Sender: TObject);
+    procedure actCopyExecute(Sender: TObject);
+    procedure actPasteExecute(Sender: TObject);
+    procedure actFindExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
@@ -49,9 +67,6 @@ type
     property Controller: TIDEController read FController write FController;
     property IDEData: TIDEData read FIDEData write SetIDEData;
   end;
-
-//var
-//  IDEData: TIDEData;
 
 implementation
 
@@ -86,9 +101,24 @@ begin
   end;
 end;
 
+procedure TIDEActions.actCopyExecute(Sender: TObject);
+begin
+  FController.Copy;
+end;
+
+procedure TIDEActions.actCutExecute(Sender: TObject);
+begin
+  FController.Cut;
+end;
+
 procedure TIDEActions.actExitExecute(Sender: TObject);
 begin
   //Self.Close;
+end;
+
+procedure TIDEActions.actFindExecute(Sender: TObject);
+begin
+  FController.Search();
 end;
 
 procedure TIDEActions.actNewProjectExecute(Sender: TObject);
@@ -115,6 +145,18 @@ begin
   end;
 end;
 
+procedure TIDEActions.actPasteExecute(Sender: TObject);
+begin
+  FController.Paste;
+end;
+
+procedure TIDEActions.actPauseExecute(Sender: TObject);
+begin
+  FController.Pause;
+  actRun.Enabled := True;
+  actPause.Enabled := False;
+end;
+
 procedure TIDEActions.actPeekCompileExecute(Sender: TObject);
 begin
   FController.PeekCompile();
@@ -132,14 +174,23 @@ begin
   end;
 end;
 
+procedure TIDEActions.actRedoExecute(Sender: TObject);
+begin
+  FController.Redo;
+end;
+
 procedure TIDEActions.actRunExecute(Sender: TObject);
 begin
-  actCompile.Execute();
+  if not FController.IsRunning then
+  begin
+    actCompile.Execute();
+  end;
   if (FController.Errors = 0) and (FController.Project.Assemble) and Boolean(actCompile.Tag) then
   begin
     actCompile.Enabled := False;
     actRun.Enabled := False;
     actStop.Enabled := True;
+    actPause.Enabled := True;
     FController.Run();
   end;
 end;
@@ -202,6 +253,12 @@ begin
   actCompile.Enabled := True;
   actRun.Enabled := True;
   actStop.Enabled := False;
+  actPause.Enabled := False;
+end;
+
+procedure TIDEActions.actUndoExecute(Sender: TObject);
+begin
+  FController.Undo;
 end;
 
 procedure TIDEActions.DataModuleCreate(Sender: TObject);

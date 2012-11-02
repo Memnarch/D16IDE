@@ -3,10 +3,13 @@ object IDEActions: TIDEActions
   Height = 98
   Width = 130
   object ActionList: TActionList
+    Images = IDEData.ToolBarImages
     Left = 24
     Top = 14
     object actNewUnit: TAction
+      Category = 'File'
       Caption = 'New Unit'
+      ImageIndex = 6
       OnExecute = actNewUnitExecute
     end
     object actCloseUnitByTab: TAction
@@ -14,29 +17,35 @@ object IDEActions: TIDEActions
       OnExecute = actCloseUnitByTabExecute
     end
     object actSaveActive: TAction
+      Category = 'File'
       Caption = 'Save'
+      ImageIndex = 7
       ShortCut = 16467
       OnExecute = actSaveActiveExecute
     end
     object actSaveActiveAs: TAction
+      Category = 'File'
       Caption = 'Save as'
       OnExecute = actSaveActiveAsExecute
     end
     object actSaveAll: TAction
+      Category = 'File'
       Caption = 'Save all'
+      ImageIndex = 8
       OnExecute = actSaveAllExecute
     end
     object actSaveProjectAs: TAction
+      Category = 'File'
       Caption = 'Save Project as'
       OnExecute = actSaveProjectAsExecute
     end
     object actNewProject: TAction
+      Category = 'File'
       Caption = 'New Project'
       OnExecute = actNewProjectExecute
     end
     object actCompile: TAction
       Caption = 'Compile'
-      ImageIndex = 0
       ShortCut = 16504
       OnExecute = actCompileExecute
     end
@@ -58,7 +67,7 @@ object IDEActions: TIDEActions
     end
     object actRun: TAction
       Caption = 'Run'
-      ImageIndex = 1
+      ImageIndex = 0
       ShortCut = 120
       OnExecute = actRunExecute
     end
@@ -72,6 +81,59 @@ object IDEActions: TIDEActions
     object actExit: TAction
       Caption = 'Exit'
       OnExecute = actExitExecute
+    end
+    object actPause: TAction
+      Caption = 'Pause'
+      Enabled = False
+      ImageIndex = 1
+      OnExecute = actPauseExecute
+    end
+    object actStep: TAction
+      Caption = 'actStep'
+      ImageIndex = 3
+    end
+    object actStepOver: TAction
+      Caption = 'actStepOver'
+      ImageIndex = 4
+    end
+    object actStepUntilReturn: TAction
+      Caption = 'actStepUntilReturn'
+      ImageIndex = 5
+    end
+    object actCopy: TAction
+      Caption = 'actCopy'
+      ImageIndex = 9
+      OnExecute = actCopyExecute
+    end
+    object actCut: TAction
+      Caption = 'actCut'
+      ImageIndex = 10
+      OnExecute = actCutExecute
+    end
+    object actPaste: TAction
+      Caption = 'actPaste'
+      ImageIndex = 11
+      OnExecute = actPasteExecute
+    end
+    object actUndo: TAction
+      Caption = 'actUndo'
+      ImageIndex = 12
+      OnExecute = actUndoExecute
+    end
+    object actRedo: TAction
+      Caption = 'actRedo'
+      ImageIndex = 13
+      OnExecute = actRedoExecute
+    end
+    object actFind: TAction
+      Caption = 'actFind'
+      ImageIndex = 14
+      ShortCut = 16454
+      OnExecute = actFindExecute
+    end
+    object actReplace: TAction
+      Caption = 'actReplace'
+      ImageIndex = 15
     end
   end
 end

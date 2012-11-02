@@ -3,7 +3,8 @@ unit IDEModule;
 interface
 
 uses
-  SysUtils, Classes, Dialogs, ImgList, Controls, ActnList, Menus;
+  SysUtils, Classes, Dialogs, ImgList, Controls, ActnList, Menus,
+  SynEditMiscClasses, SynEditSearch, JvComponentBase, JvFindReplace;
 
 type
   TIDEData = class(TDataModule)
@@ -19,14 +20,14 @@ type
     NewUnit1: TMenuItem;
     AddUnit1: TMenuItem;
     Options2: TMenuItem;
+    ToolBarDisabledImages: TImageList;
+    dlgFindReplace: TJvFindReplace;
   private
     { Private declarations }
   public
     { Public declarations }
   end;
 
-//var
-//  IDEData: TIDEData;
 
 implementation
 

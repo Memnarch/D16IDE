@@ -20,9 +20,6 @@ object MainForm: TMainForm
     Left = 185
     Top = 26
     Height = 478
-    ExplicitLeft = 480
-    ExplicitTop = 296
-    ExplicitHeight = 100
   end
   object SplitterRight: TSplitter
     Left = 996
@@ -52,8 +49,6 @@ object MainForm: TMainForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 57
-    ExplicitHeight = 447
     object CodeTree: TVirtualStringTree
       AlignWithMargins = True
       Left = 3
@@ -72,7 +67,6 @@ object MainForm: TMainForm
       TabOrder = 0
       OnDblClick = CodeTreeDblClick
       OnGetText = CodeTreeGetText
-      ExplicitHeight = 441
       Columns = <>
     end
   end
@@ -84,8 +78,6 @@ object MainForm: TMainForm
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 57
-    ExplicitHeight = 447
     object ProjectTree: TVirtualStringTree
       AlignWithMargins = True
       Left = 3
@@ -106,7 +98,6 @@ object MainForm: TMainForm
       TreeOptions.SelectionOptions = [toRightClickSelect]
       OnContextPopup = ProjectTreeContextPopup
       OnDblClick = ProjectTreeDblClick
-      ExplicitHeight = 441
       Columns = <>
     end
   end
@@ -153,10 +144,6 @@ object MainForm: TMainForm
     Align = alClient
     TabOrder = 3
     OnContextPopup = PageControlContextPopup
-    ExplicitLeft = 188
-    ExplicitTop = 57
-    ExplicitWidth = 808
-    ExplicitHeight = 447
   end
   object ControlBar: TControlBar
     Left = 0
@@ -170,33 +157,149 @@ object MainForm: TMainForm
     DrawingStyle = dsGradient
     TabOrder = 4
     object tbRun: TToolBar
-      Left = 12
+      Left = 291
       Top = 2
       Width = 69
       Height = 22
       Align = alNone
       Caption = 'ToolBar'
+      DisabledImages = IDEData.ToolBarDisabledImages
       DrawingStyle = dsGradient
       Images = IDEData.ToolBarImages
       TabOrder = 0
-      object btnCompile: TToolButton
+      object btnRun: TToolButton
         Left = 0
         Top = 0
-        Caption = 'Compile'
-        ImageIndex = 0
+        Action = IDEActions.actRun
       end
-      object btnRun: TToolButton
+      object btnPause: TToolButton
         Left = 23
         Top = 0
-        Caption = 'Run'
-        ImageIndex = 1
+        Action = IDEActions.actPause
       end
       object btnStop: TToolButton
         Left = 46
         Top = 0
-        Caption = 'Stop'
-        Enabled = False
-        ImageIndex = 2
+        Action = IDEActions.actStop
+      end
+    end
+    object tbDebug: TToolBar
+      Left = 373
+      Top = 2
+      Width = 69
+      Height = 22
+      AutoSize = True
+      Caption = 'tbDebug'
+      DisabledImages = IDEData.ToolBarDisabledImages
+      DrawingStyle = dsGradient
+      Images = IDEData.ToolBarImages
+      TabOrder = 1
+      object btnStep: TToolButton
+        Left = 0
+        Top = 0
+        Action = IDEActions.actStep
+      end
+      object btnStepOver: TToolButton
+        Left = 23
+        Top = 0
+        Action = IDEActions.actStepOver
+      end
+      object btnStepUntilReturn: TToolButton
+        Left = 46
+        Top = 0
+        Action = IDEActions.actStepUntilReturn
+      end
+    end
+    object tbFile: TToolBar
+      Left = 11
+      Top = 2
+      Width = 69
+      Height = 22
+      Caption = 'tbFile'
+      DisabledImages = IDEData.ToolBarDisabledImages
+      DrawingStyle = dsGradient
+      Images = IDEData.ToolBarImages
+      TabOrder = 2
+      object btnNewUnit: TToolButton
+        Left = 0
+        Top = 0
+        Action = IDEActions.actNewUnit
+      end
+      object btnSave: TToolButton
+        Left = 23
+        Top = 0
+        Action = IDEActions.actSaveActive
+      end
+      object btnSaveAll: TToolButton
+        Left = 46
+        Top = 0
+        Action = IDEActions.actSaveAll
+      end
+    end
+    object tbEdit: TToolBar
+      Left = 93
+      Top = 2
+      Width = 124
+      Height = 22
+      AutoSize = True
+      Caption = 'tbEdit'
+      DisabledImages = IDEData.ToolBarDisabledImages
+      DrawingStyle = dsGradient
+      Images = IDEData.ToolBarImages
+      TabOrder = 3
+      object ToolButton1: TToolButton
+        Left = 0
+        Top = 0
+        Action = IDEActions.actUndo
+      end
+      object ToolButton2: TToolButton
+        Left = 23
+        Top = 0
+        Action = IDEActions.actRedo
+      end
+      object ToolButton3: TToolButton
+        Left = 46
+        Top = 0
+        Width = 8
+        Caption = 'ToolButton3'
+        ImageIndex = 12
+        Style = tbsSeparator
+      end
+      object btnCopy: TToolButton
+        Left = 54
+        Top = 0
+        Action = IDEActions.actCopy
+      end
+      object btnCut: TToolButton
+        Left = 77
+        Top = 0
+        Action = IDEActions.actCut
+      end
+      object btnPaste: TToolButton
+        Left = 100
+        Top = 0
+        Action = IDEActions.actPaste
+      end
+    end
+    object tbSearch: TToolBar
+      Left = 230
+      Top = 2
+      Width = 48
+      Height = 22
+      Caption = 'tbSearch'
+      DisabledImages = IDEData.ToolBarDisabledImages
+      DrawingStyle = dsGradient
+      Images = IDEData.ToolBarImages
+      TabOrder = 4
+      object ToolButton4: TToolButton
+        Left = 0
+        Top = 0
+        Action = IDEActions.actFind
+      end
+      object ToolButton5: TToolButton
+        Left = 23
+        Top = 0
+        Action = IDEActions.actReplace
       end
     end
   end
@@ -208,48 +311,47 @@ object MainForm: TMainForm
       object New1: TMenuItem
         Caption = 'New'
         object miNewUnit: TMenuItem
-          Caption = 'New Unit'
+          Action = IDEActions.actNewUnit
         end
         object miNewProject: TMenuItem
-          Caption = 'New Project'
+          Action = IDEActions.actNewProject
         end
       end
       object miOpen: TMenuItem
-        Caption = 'Open Project'
+        Action = IDEActions.actOpenProject
       end
       object miSave: TMenuItem
-        Caption = 'Save'
-        ShortCut = 16467
+        Action = IDEActions.actSaveActive
       end
       object miSaveAs: TMenuItem
-        Caption = 'Save as'
+        Action = IDEActions.actSaveActiveAs
       end
       object miSaveProjectAs: TMenuItem
-        Caption = 'Save Project as'
+        Action = IDEActions.actSaveProjectAs
       end
       object miSaveAll: TMenuItem
-        Caption = 'Save all'
+        Action = IDEActions.actSaveAll
       end
       object miExit: TMenuItem
-        Caption = 'Exit'
+        Action = IDEActions.actExit
       end
     end
     object Edit1: TMenuItem
       Caption = 'Edit'
       object Undo1: TMenuItem
-        Caption = 'Undo'
+        Action = IDEActions.actUndo
       end
       object Redo1: TMenuItem
-        Caption = 'Redo'
+        Action = IDEActions.actRedo
       end
       object Cut1: TMenuItem
-        Caption = 'Cut'
+        Action = IDEActions.actCut
       end
       object Copy1: TMenuItem
-        Caption = 'Copy'
+        Action = IDEActions.actCopy
       end
       object Paste1: TMenuItem
-        Caption = 'Paste'
+        Action = IDEActions.actPaste
       end
     end
     object Search1: TMenuItem
@@ -264,23 +366,16 @@ object MainForm: TMainForm
     object Project1: TMenuItem
       Caption = 'Project'
       object miCompile: TMenuItem
-        Caption = 'Compile'
-        ImageIndex = 0
-        ShortCut = 16504
+        Action = IDEActions.actCompile
       end
       object miRun: TMenuItem
-        Caption = 'Run'
-        ImageIndex = 1
-        ShortCut = 120
+        Action = IDEActions.actRun
       end
       object miStop: TMenuItem
-        Caption = 'Stop'
-        Enabled = False
-        ImageIndex = 2
-        ShortCut = 16497
+        Action = IDEActions.actStop
       end
       object miOptions: TMenuItem
-        Caption = 'Options'
+        Action = IDEActions.actProjectOptions
       end
     end
     object Help1: TMenuItem

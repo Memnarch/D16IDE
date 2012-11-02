@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, IDEEdit, IDEUnit;
+  Dialogs, IDEEdit, IDEUnit, SearchForm;
 
 type
   TIDEPage = class(TFrame)
@@ -12,6 +12,7 @@ type
     { Private declarations }
     FIDEEdit: TIDEEdit;
     FIDEUnit: TIDEUnit;
+    FSearchForm: TSimpleSearchForm;
     FOnUnitRenamed: TNotifyEvent;
     procedure SetIDEUnit(const Value: TIDEUnit);
     function GetIsPartOfProject: Boolean;
@@ -21,6 +22,8 @@ type
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
+    procedure ShowSearch();
+    procedure HideSearch();
     property IsPartOfProject: Boolean read GetIsPartOfProject;
     property NeedsSaving: Boolean read GetNeedsSaving;
     property IDEEdit: TIDEEdit read FIDEEdit;
@@ -44,6 +47,10 @@ begin
   FIDEEdit.Parent := Self;
   FIDEEdit.Align := alClient;
   FIDEEdit.Lines.Text := CDefaultUnit;
+  FSearchForm := TSimpleSearchForm.Create(Self, FIDEEdit);
+  FSearchForm.Visible := False;
+  FSearchForm.Parent := Self;
+  FSearchForm.Align := alBottom;
 end;
 
 procedure TIDEPage.DoOnUnitRenamed;
@@ -70,12 +77,23 @@ begin
   DoOnUnitRenamed();
 end;
 
+procedure TIDEPage.HideSearch;
+begin
+  FSearchForm.Visible := False;
+end;
+
 procedure TIDEPage.SetIDEUnit(const Value: TIDEUnit);
 begin
   FIDEUnit := Value;
   FIDEUnit.SourceLink := FIDEEdit.Lines;
   FIDEUnit.OnRename := HandleOnRename;
   DoOnUnitRenamed();
+end;
+
+procedure TIDEPage.ShowSearch;
+begin
+  FSearchForm.Visible := True;
+  FSearchForm.edFind.SetFocus();
 end;
 
 end.

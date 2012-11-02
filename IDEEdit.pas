@@ -17,7 +17,7 @@ type
 implementation
 
 uses
-  SynHighlighterPas, Graphics;
+  SynHighlighterPas, SynEditSearch, Graphics;
 
 { TIDEEdit }
 
@@ -34,6 +34,7 @@ begin
   TabWidth := 2;
   Options := Options - [eoSmartTabs];
   DoubleBuffered := True;
+  SearchEngine := TSynEditSearch.Create(Self);
 end;
 
 end.
