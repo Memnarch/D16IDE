@@ -19,7 +19,8 @@ uses
   CodeTreeController in 'CodeTreeController.pas',
   IDEModule in 'IDEModule.pas' {IDEData: TDataModule},
   IDEController in 'IDEController.pas',
-  IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule};
+  IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule},
+  SearchForm in 'SearchForm.pas' {SimpleSearchForm};
 
 {$R *.res}
 
