@@ -3,7 +3,7 @@ unit ProjectTreeController;
 interface
 
 uses
-  Classes, Types, Windows, SysUtils, Generics.Collections, VirtualTrees, Project, IDEUnit;
+  Classes, Types, Windows, SysUtils, Generics.Collections, VirtualTrees, Project, IDEUnit, Controls;
 
 type
   TProjectNodeData = record
@@ -16,6 +16,7 @@ type
   private
     FProject: TProject;
     FTree: TVirtualStringTree;
+    FImages: TImageList;
     procedure SetProject(const Value: TProject);
     procedure HandleUnitsChanged(Sender: TObject; const Item: TIDEUnit;
       Action: TCollectionNotification);
@@ -27,9 +28,11 @@ type
       var Ghosted: Boolean; var ImageIndex: Integer);
     procedure ProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
+    procedure SetImages(const Value: TImageList);
   public
     constructor Create(ATree: TVirtualStringTree);
     property Project: TProject read FProject write SetProject;
+    property Images: TImageList read FImages write SetImages;
   end;
 
 implementation
@@ -58,7 +61,14 @@ procedure TProjectTreeController.ProjectTreeGetImageIndex(
   Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind;
   Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
 begin
-
+  if Node = Sender.GetFirst() then
+  begin
+    ImageIndex := 0;
+  end
+  else
+  begin
+    ImageIndex := 1;
+  end;
 end;
 
 procedure TProjectTreeController.ProjectTreeGetText(Sender: TBaseVirtualTree;
@@ -106,6 +116,12 @@ begin
   finally
     FTree.EndUpdate();
   end;
+end;
+
+procedure TProjectTreeController.SetImages(const Value: TImageList);
+begin
+  FImages := Value;
+  FTree.Images := FImages;
 end;
 
 procedure TProjectTreeController.SetProject(const Value: TProject);
