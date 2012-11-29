@@ -82,14 +82,23 @@ var
 begin
   for i := 0 to FEdit.Lines.Count - 1 do
   begin
-    if StartsText('unit ', Trim(FEdit.Lines.Strings[i])) then
+    if StartsText('unit ', Trim(FEdit.Lines.Strings[i]))
+      or StartsText('program ', Trim(FEdit.Lines.Strings[i]))
+    then
     begin
       LPos := Pos(';', FEdit.Lines.Strings[i]);
       if LPos > 0 then
       begin
         LEnd := copy(FEdit.Lines.Strings[i], LPos + 1, Length(FEdit.Lines.Strings[i]));
       end;
-      FEdit.Lines.Strings[i] := 'unit ' + AName + ';' + LEnd;
+      if StartsText('unit ', Trim(FEdit.Lines.Strings[i])) then
+      begin
+        FEdit.Lines.Strings[i] := 'unit ' + AName + ';' + LEnd;
+      end
+      else
+      begin
+        FEdit.Lines.Strings[i] := 'program ' + AName + ';' + LEnd;
+      end;
       Break;
     end;
   end;
