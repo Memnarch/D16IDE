@@ -8,7 +8,7 @@ uses
   SynEditHighlighter, SynHighlighterPas, SynMemo, ActnList, JvExComCtrls,
   JvComCtrls, JvTabBar, JvExControls, JvPageList, JvTabBarXPPainter,
   JvComponentBase, Project,  IDEUnit, CompilerDefines, Compiler,
-  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator, SiAuto, SmartInspect,
+  PascalUnit, SynCompletionProposal, CPUViewForm, Emulator,
   WatchViewForm, IDETabSheet, IDEPageFrame, ProjectTreeController, CodeTreeController, IDEModule,
   IDEController, IDEActionModule, SynEditMiscClasses, SynEditSearch;
 
@@ -301,6 +301,6 @@ end;
 
 initialization
 
-Si.Enabled := True;
+//Si.Enabled := True;
 
 end.

@@ -20,7 +20,8 @@ uses
   IDEModule in 'IDEModule.pas' {IDEData: TDataModule},
   IDEController in 'IDEController.pas',
   IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule},
-  SearchForm in 'SearchForm.pas' {SimpleSearchForm};
+  SearchForm in 'SearchForm.pas' {SimpleSearchForm},
+  Debug in 'Debug.pas';
 
 {$R *.res}
 
