@@ -269,6 +269,7 @@ var
   LPos: TPoint;
   LNode: PVirtualNode;
   LData: PProjectNodeData;
+  LUnit: TIDEUnit;
 begin
   GetCursorPos(LPos);
   LPos := ProjectTree.ScreenToClient(LPos);
@@ -277,16 +278,28 @@ begin
   begin
     if LNode = ProjectTree.GetFirst() then
     begin
-      Exit;
-    end;
-    LData := ProjectTree.GetNodeData(LNode);
-    if Assigned(LData) then
-    begin
-      if not FController.IDEUnitIsOpen(TIDEUnit(LData.Item)) then
+      LData := ProjectTree.GetNodeData(LNode);
+      if Assigned(LData) then
       begin
-        FController.AddPage(TIdeUnit(LData.Item).Caption, '', TIdeUnit(LData.Item));
+        LUnit := TProject(LData.Item).ProjectUnit;
       end;
-        FController.FokusIDEPageByUnit(TIdeUnit(LData.Item));
+    end
+    else
+    begin
+      LData := ProjectTree.GetNodeData(LNode);
+      if Assigned(LData) then
+      begin
+        LUnit := TIDEUnit(LData.Item);
+      end;
+    end;
+
+    if Assigned(LUnit) then
+    begin
+      if not FController.IDEUnitIsOpen(LUnit) then
+      begin
+        FController.AddPage(LUnit.Caption, '', LUnit);
+      end;
+        FController.FokusIDEPageByUnit(LUnit);
     end;
   end;
 end;
