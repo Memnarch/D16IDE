@@ -77,7 +77,7 @@ implementation
 
 uses
   DateUtils, IDETabSheet, PascalUnit, CodeElement, DataType, VarDeclaration, ProcDeclaration,
-  CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls;
+  CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls, UnitTemplates;
 
 { TIDEController }
 
@@ -98,7 +98,7 @@ begin
   end;
   LPage.IDEPage.IDEUnit := LUnit;
   LPage.IDEPage.IDEEdit.OnKeyDown := HandleSynEditKeyDown;
-  if not Assigned(AUnit) then
+  if not Assigned(AUnit)  then
   begin
     if AFile = '' then
     begin
@@ -110,7 +110,7 @@ begin
     end;
   end;
 
-  if (AFile <> '') or Assigned(AUnit)  then
+  if ((AFile <> '') or Assigned(AUnit)) and FileExists(LUnit.FileName)  then
   begin
     LUnit.Load();
   end;
@@ -200,8 +200,20 @@ var
   LPage: TIDETabSheet;
 begin
   LPage := TIDETabSheet(FPageControl.Pages[AIndex]);
-  SaveUnit(LPage.IDEPage.IDEUnit);
+  if not SaveUnit(LPage.IDEPage.IDEUnit) then
+  begin
+    if LPage.IDEPage.IDEUnit = FProject.ProjectUnit then
+    begin
+      MessageBox(0, 'Can not close Projectsource without saving it for the first time!', 'Hint', MB_ICONASTERISK);
+      Exit;
+    end;
+    if MessageBox(0, 'Close without saving?', 'Warning', MB_YESNO or MB_ICONWARNING) = IDNO then
+    begin
+      Exit;
+    end;
+  end;
   LPage.IDEPage.IDEUnit.SourceLink := nil;
+  LPage.IDEPage.IDEUnit.OnRename := nil;
   LPage.Free;
 end;
 
@@ -250,7 +262,9 @@ begin
   FProject.ProjectPath := AProjectFolder;
   FProject.ProjectName := ChangeFileExt(ATitle,'.d16p');
   FPeekCompiler.Reset();
-  AddPage('Unit' + IntToSTr(FID));
+  AddPage(ChangeFileExt(FProject.ProjectName, ''), '', FProject.ProjectUnit);
+  FProject.ProjectUnit.SourceLink.Text := CDefaultProgramUnit;
+  FProject.ProjectUnit.Caption := ChangeFileExt(FProject.ProjectName, '');
   Inc(FID);
   PageControlChange(FPageControl);
   FProjectTreeController.Project := FProject;
@@ -413,29 +427,17 @@ end;
 
 procedure TIDEController.OpenProject(AFile: string);
 var
-  LDoc: IXMLDocument;
-  LNode, LRoot: IXMLNode;
   i: Integer;
   LPath: string;
   LPage: TIDEPage;
 begin
   ClearProjects();
-  LDoc := TXMLDocument.Create(nil);
-  LDoc.Active := True;
-  LDoc.LoadFromFile(AFile);
-  LRoot := LDoc.ChildNodes.First;
   FProject := TProject.Create();
-  FProject.ProjectName := ChangeFileExt(LRoot.Attributes['Name'], '.d16p');
-  FProject.ProjectPath := ExtractFilePath(AFile);
+  FProject.LoadFromFile(AFile);
   FPeekCompiler.Reset();
   FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
-  for i := 0 to LRoot.ChildNodes.Count - 1 do
-  begin
-    LNode := LRoot.ChildNodes.Nodes[i];
-    LPath := FProject.ProjectPath + LNode.Attributes['Path'];
-    AddPage(ExtractFileName(LPath), LPath);
-  end;
   FProjectTreeController.Project := FProject;
+  AddPage(FProject.ProjectUnit.Caption, '', FProject.ProjectUnit);
   LPage := GetActiveIDEPage();
   if Assigned(LPage) then
   begin
@@ -543,6 +545,11 @@ var
   LOldUnitName: string;
 begin
   Result := False;
+  if AUnit = FProject.ProjectUnit then
+  begin
+    Result := SaveProject(FProject);
+    Exit;
+  end;
   LOldUnitName := AUnit.Caption;
   if AUnit.SavePath = '' then
   begin
