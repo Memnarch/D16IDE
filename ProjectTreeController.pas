@@ -44,6 +44,7 @@ begin
   FTree := ATree;
   FTree.OnGetText := ProjectTreeGetText;
   FTree.OnGetImageIndex := ProjectTreeGetImageIndex;
+  FTree.TreeOptions.MiscOptions := FTree.TreeOptions.MiscOptions - [toToggleOnDblClick];
 end;
 
 procedure TProjectTreeController.HandleUnitsChanged(Sender: TObject;
@@ -63,7 +64,7 @@ procedure TProjectTreeController.ProjectTreeGetImageIndex(
 begin
   if Node = Sender.GetFirst() then
   begin
-    ImageIndex := 0;
+    ImageIndex := 2;
   end
   else
   begin
