@@ -506,7 +506,7 @@ procedure TIDEController.Run;
 begin
   if not IsRunning then
   begin
-    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.asm'));
+    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.asm'));
     FCPUView.Show;
     FWatchView.Show;
     FLog.Clear;
@@ -514,8 +514,8 @@ begin
     FEmulator.OnMessage := HandleEmuMessage;
     FCpuView.SetEmulator(FEmulator);
     FWatchView.SetEmulator(FEmulator);
-    FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16')));
-    FEmulator.LoadFromFile(ChangeFileExt(FProject.Units.Items[0].FileName, '.d16'), FProject.UseBigEndian);
+    FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
+    FEmulator.LoadFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16'), FProject.UseBigEndian);
   end;
   FEmulator.Run();
 end;
