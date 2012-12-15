@@ -13,6 +13,7 @@ type
     FImageIndex: Integer;
     FSourceLink: TStrings;
     FOnRename: TNotifyEvent;
+    FExtension: string;
     function GetFileName: string;
     procedure DoOnRename();
     procedure SetSourceLink(const Value: TStrings);
@@ -20,6 +21,7 @@ type
     procedure SetFileName(const Value: string);
     function GetIsOpen: Boolean;
   public
+    constructor Create();
     destructor Destroy(); override;
     procedure Save();
     procedure Load();
@@ -39,6 +41,11 @@ uses
 
 { TIDEUnit }
 
+constructor TIDEUnit.Create;
+begin
+  FExtension := '.pas';
+end;
+
 destructor TIDEUnit.Destroy;
 begin
   inherited;
@@ -54,7 +61,7 @@ end;
 
 function TIDEUnit.GetFileName: string;
 begin
-  Result := ChangeFileExt(IncludeTrailingBackslash(FSavePath) + FCaption, '.pas');
+  Result := ChangeFileExt(IncludeTrailingBackslash(FSavePath) + FCaption, FExtension);
 end;
 
 function TIDEUnit.GetIsOpen: Boolean;
@@ -88,6 +95,7 @@ procedure TIDEUnit.SetFileName(const Value: string);
 begin
   FSavePath := ExtractFilePath(Value);
   Caption := ChangeFileExt(ExtractFileName(Value), '');
+  FExtension := ExtractFileExt(Value);
 end;
 
 procedure TIDEUnit.SetSourceLink(const Value: TStrings);
