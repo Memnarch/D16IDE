@@ -221,7 +221,7 @@ procedure TIDEController.Compile;
 begin
   FLog.Clear;
   FErrors := 0;
-  CompileFile(FProject.Units.Items[0].FileName, FProject.Optimize, FProject.Assemble,
+  CompileFile(FProject.ProjectUnit.FileName, FProject.Optimize, FProject.Assemble,
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
 end;
 
