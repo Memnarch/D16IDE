@@ -9,8 +9,10 @@ type
   TSimpleRefactor = class
   private
     FEdit: TSynEdit;
+    FLines: TStrings;
   public
-    constructor Create(AEdit: TSynEdit);
+    constructor Create(AEdit: TSynEdit); overload;
+    constructor Create(ALines: TStrings); overload;
     procedure RenameHeader(AName: string);
     procedure CompleteBlocks();
   end;
@@ -73,6 +75,12 @@ end;
 constructor TSimpleRefactor.Create(AEdit: TSynEdit);
 begin
   FEdit := AEdit;
+  FLines := FEdit.Lines;
+end;
+
+constructor TSimpleRefactor.Create(ALines: TStrings);
+begin
+  FLines := ALines;
 end;
 
 procedure TSimpleRefactor.RenameHeader(AName: string);
@@ -80,24 +88,24 @@ var
   i, LPos: Integer;
   LEnd: string;
 begin
-  for i := 0 to FEdit.Lines.Count - 1 do
+  for i := 0 to FLines.Count - 1 do
   begin
-    if StartsText('unit ', Trim(FEdit.Lines.Strings[i]))
-      or StartsText('program ', Trim(FEdit.Lines.Strings[i]))
+    if StartsText('unit ', Trim(FLines.Strings[i]))
+      or StartsText('program ', Trim(FLines.Strings[i]))
     then
     begin
-      LPos := Pos(';', FEdit.Lines.Strings[i]);
+      LPos := Pos(';', FLines.Strings[i]);
       if LPos > 0 then
       begin
-        LEnd := copy(FEdit.Lines.Strings[i], LPos + 1, Length(FEdit.Lines.Strings[i]));
+        LEnd := copy(FLines.Strings[i], LPos + 1, Length(FLines.Strings[i]));
       end;
-      if StartsText('unit ', Trim(FEdit.Lines.Strings[i])) then
+      if StartsText('unit ', Trim(FLines.Strings[i])) then
       begin
-        FEdit.Lines.Strings[i] := 'unit ' + AName + ';' + LEnd;
+        FLines.Strings[i] := 'unit ' + AName + ';' + LEnd;
       end
       else
       begin
-        FEdit.Lines.Strings[i] := 'program ' + AName + ';' + LEnd;
+        FLines.Strings[i] := 'program ' + AName + ';' + LEnd;
       end;
       Break;
     end;
