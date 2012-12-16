@@ -14,11 +14,15 @@ type
     FSourceLink: TStrings;
     FOnRename: TNotifyEvent;
     FExtension: string;
+    FOnAfterSave: TNotifyEvent;
+    FOnAfterLoad: TNotifyEvent;
     function GetFileName: string;
     procedure DoOnRename();
     procedure SetSourceLink(const Value: TStrings);
     procedure SetCaption(const Value: string);
     procedure SetFileName(const Value: string);
+    procedure DoAfterLoad();
+    procedure DoAfterSave();
     function GetIsOpen: Boolean;
   public
     constructor Create();
@@ -32,6 +36,8 @@ type
     property SourceLink: TStrings read FSourceLink write SetSourceLink;
     property OnRename: TNotifyEvent read FOnRename write FOnRename;
     property IsOpen: Boolean read GetIsOpen;
+    property OnAfterSave: TNotifyEvent read FOnAfterSave write FOnAfterSave;
+    property OnAfterLoad: TNotifyEvent read FOnAfterLoad write FOnAfterLoad;
   end;
 
 implementation
@@ -49,6 +55,22 @@ end;
 destructor TIDEUnit.Destroy;
 begin
   inherited;
+end;
+
+procedure TIDEUnit.DoAfterLoad;
+begin
+  if Assigned(FOnAfterLoad) then
+  begin
+    FOnAfterLoad(Self);
+  end;
+end;
+
+procedure TIDEUnit.DoAfterSave;
+begin
+  if Assigned(FOnAfterSave) then
+  begin
+    FOnAfterSave(Self);
+  end;
 end;
 
 procedure TIDEUnit.DoOnRename;
@@ -74,6 +96,7 @@ begin
   if IsOpen then
   begin
     FSourceLink.LoadFromFile(FileName);
+    DoAfterLoad();
   end;
 end;
 
@@ -82,6 +105,7 @@ begin
   if IsOpen then
   begin
     FSourceLink.SaveToFile(FileName);
+    DoAfterSave();
   end;
 end;
 
