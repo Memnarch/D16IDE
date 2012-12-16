@@ -3,16 +3,31 @@ unit IDEEdit;
 interface
 
 uses
-  Classes, Types, SynEdit, SimpleRefactor;
+  Classes, Types, Controls, SynEdit, SimpleRefactor, SynEditTextBuffer, Generics.Collections, LineInfo;
 
 type
   TIDEEdit = class(TSynEdit)
   private
     FRefactor: TSimpleRefactor;
+    FBuffer: TSynEditStringList;
+    FLineDeleted: TStringListChangeEvent;
+    FLineInserted: TStringListChangeEvent;
+    FLinePutt: TStringListChangeEvent;
+    FLineInfo: TObjectList<TLineInfo>;
     procedure InternalKeyPress(Sender: TObject; var Key: Char);
+    procedure HandleLineDelete(Sender: TObject; Index, Count: Integer);
+    procedure HandleLineInserted(Sender: TObject; Index, Count: Integer);
+    procedure HandleLinePutt(Sender: TObject; Index, Count: Integer);
+    procedure InterceptBuffer();
+    procedure HandleGutterClick(Sender: TObject; Button: TMouseButton;
+    X, Y, Line: Integer; Mark: TSynEditMark);
+    procedure HandleGutterPaint(Sender: TObject; aLine, X, Y: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy(); override;
+    procedure SaveToFile(AFile: string);
+    procedure LoadFromFile(AFile: string);
+    procedure MarkAllLines(AState: TLineState);
     property Refactor: TSimpleRefactor read FRefactor;
   end;
 
@@ -26,6 +41,8 @@ uses
 constructor TIDEEdit.Create(AOwner: TComponent);
 begin
   inherited;
+  FLineInfo := TObjectList<TLineInfo>.Create();
+  InterceptBuffer();
   FRefactor := TSimpleRefactor.Create(Self);
   Highlighter := TSynPasSyn.Create(Self);
   TSynPasSyn(Highlighter).AsmAttri.Foreground := clBlack;
@@ -38,12 +55,103 @@ begin
   DoubleBuffered := True;
   SearchEngine := TSynEditSearch.Create(Self);
   OnKeyPress := InternalKeyPress;
+  OnGutterPaint := HandleGutterPaint;
+  OnGutterClick := HandleGutterClick;
 end;
 
 destructor TIDEEdit.Destroy;
 begin
   FRefactor.Free;
+  FLineInfo.Free;
   inherited;
+end;
+
+procedure TIDEEdit.HandleGutterClick(Sender: TObject; Button: TMouseButton; X,
+  Y, Line: Integer; Mark: TSynEditMark);
+begin
+
+end;
+
+procedure TIDEEdit.HandleGutterPaint(Sender: TObject; aLine, X, Y: Integer);
+var
+  LColor: TColor;
+begin
+  if (FLineInfo.Count > 0) then
+  begin
+//    if (FLineInfo.Items[ALine-1].Index > - 1) then
+//    begin
+//      BookMarkOptions.BookmarkImages.Draw(Canvas, X, Y, FLineInfo.Items[ALine-1].Index);
+//    end;
+    if FLineInfo.Items[ALine-1].State = ltNone then Exit;
+    
+    if FLineInfo.Items[ALine-1].State = ltModified then
+    begin
+      LColor := clYellow;
+    end
+    else
+    begin
+      LColor := clGreen;
+    end;
+    Canvas.Brush.Color := LColor;
+    Canvas.Pen.Color := LColor;
+    Canvas.Rectangle(x + 20, y, x+25, y+17);
+  end;
+end;
+
+procedure TIDEEdit.HandleLineDelete(Sender: TObject; Index, Count: Integer);
+var
+  I: Integer;
+begin
+  if Assigned(FLineDeleted) then
+  begin
+    FLineDeleted(Sender, Index, Count);
+  end;
+
+  for i := Index + (Count-1) downto Index do
+  begin
+    FLineInfo.Delete(i);
+  end;
+end;
+
+procedure TIDEEdit.HandleLineInserted(Sender: TObject; Index, Count: Integer);
+var
+  i: Integer;
+begin
+  if Assigned(FLineInserted) then
+  begin
+    FLineInserted(Sender, Index, Count);
+  end;
+
+  for i := Index to  Index + (Count-1) do
+  begin
+    FLineInfo.Insert(Index, TLineInfo.Create(ltModified));
+  end;
+end;
+
+procedure TIDEEdit.HandleLinePutt(Sender: TObject; Index, Count: Integer);
+var
+  i: Integer;
+begin
+  if Assigned(FLinePutt) then
+  begin
+    FLinePutt(Sender, Index, Count);
+  end;
+
+  for i := Index to Index + (Count-1) do
+  begin
+    FLineInfo.Items[i].State := ltModified;
+  end;
+end;
+
+procedure TIDEEdit.InterceptBuffer;
+begin
+  FBuffer :=  Lines as TSynEditStringList;
+  FLineDeleted := FBuffer.OnDeleted;
+  FLineInserted := FBuffer.OnInserted;
+  FLinePutt := FBuffer.OnPutted;
+  FBuffer.OnDeleted := HandleLineDelete;
+  FBuffer.OnInserted := HandleLineInserted;
+  FBuffer.OnPutted := HandleLinePutt;
 end;
 
 procedure TIDEEdit.InternalKeyPress(Sender: TObject; var Key: Char);
@@ -52,6 +160,32 @@ begin
   begin
     FRefactor.CompleteBlocks();
   end;
+end;
+
+procedure TIDEEdit.LoadFromFile(AFile: string);
+begin
+  Lines.LoadFromFile(AFile);
+  MarkAllLines(ltNone);
+end;
+
+procedure TIDEEdit.MarkAllLines(AState: TLineState);
+var
+  i: Integer;
+begin
+  for i := 0 to FLineInfo.Count - 1 do
+  begin
+    if (FLineInfo.Items[i].State <> ltNone) or (AState = ltNone) then
+    begin
+      FLineInfo.Items[i].State := AState;
+    end;
+  end;
+  Repaint();
+end;
+
+procedure TIDEEdit.SaveToFile(AFile: string);
+begin
+  Lines.SaveToFile(AFile);
+  MarkAllLines(ltSaved);
 end;
 
 end.
