@@ -19,9 +19,12 @@ type
     function GetNeedsSaving: Boolean;
     procedure HandleOnRename(Sender: TObject);
     procedure DoOnUnitRenamed();
+    procedure HandleAfterSave(Sender: TObject);
+    procedure HandleAfterLoad(Sender: TObject);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy(); override;
     procedure ShowSearch();
     procedure HideSearch();
     procedure FindNext();
@@ -36,7 +39,7 @@ type
 implementation
 
 uses
-  UnitTemplates;
+  UnitTemplates, LineInfo;
 
 {$R *.dfm}
 
@@ -53,6 +56,17 @@ begin
   FSearchForm.Visible := False;
   FSearchForm.Parent := Self;
   FSearchForm.Align := alBottom;
+end;
+
+destructor TIDEPage.Destroy;
+begin
+  if Assigned(FIDEUnit) then
+  begin
+    FIDEUnit.OnRename := nil;
+    FIDEUnit.OnAfterSave := nil;
+    FIDEUnit.OnAfterLoad := nil;
+  end;
+  inherited;
 end;
 
 procedure TIDEPage.DoOnUnitRenamed;
@@ -83,6 +97,16 @@ begin
   Result := FIDEEdit.Modified;
 end;
 
+procedure TIDEPage.HandleAfterLoad(Sender: TObject);
+begin
+  FIDEEdit.MarkAllLines(ltNone);
+end;
+
+procedure TIDEPage.HandleAfterSave(Sender: TObject);
+begin
+  FIDEEdit.MarkAllLines(ltSaved);
+end;
+
 procedure TIDEPage.HandleOnRename(Sender: TObject);
 begin
   FIDEEdit.Refactor.RenameHeader(TIDEUnit(Sender).Caption);
@@ -99,6 +123,8 @@ begin
   FIDEUnit := Value;
   FIDEUnit.SourceLink := FIDEEdit.Lines;
   FIDEUnit.OnRename := HandleOnRename;
+  FIDEUnit.OnAfterSave := HandleAfterSave;
+  FIDEUnit.OnAfterLoad := HandleAfterLoad;
   DoOnUnitRenamed();
 end;
 
