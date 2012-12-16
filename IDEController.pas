@@ -427,8 +427,6 @@ end;
 
 procedure TIDEController.OpenProject(AFile: string);
 var
-  i: Integer;
-  LPath: string;
   LPage: TIDEPage;
 begin
   ClearProjects();
