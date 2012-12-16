@@ -21,7 +21,8 @@ uses
   IDEController in 'IDEController.pas',
   IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule},
   SearchForm in 'SearchForm.pas' {SimpleSearchForm},
-  Debug in 'Debug.pas';
+  Debug in 'Debug.pas',
+  LineInfo in 'LineInfo.pas';
 
 {$R *.res}
 
