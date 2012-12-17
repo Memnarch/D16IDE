@@ -5,7 +5,7 @@ interface
 uses
   Classes, Types, Windows, Forms, SysUtils, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
-  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal;
+  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger;
 
 type
   TIDEController = class(TComponent)
@@ -23,8 +23,10 @@ type
     FCodeTreeController: TCodeTreeController;
     FErrors: Cardinal;
     FLog: TStrings;
+    FDebugger: TDebugger;
     FIDEData: TIDEData;
   //events
+    procedure UpdateAllMappings();
     procedure PageControlChange(Sender: TObject);
     function GetIsRunning: Boolean;
     procedure SetIDEData(const Value: TIDEData);
@@ -77,7 +79,7 @@ implementation
 
 uses
   DateUtils, IDETabSheet, PascalUnit, CodeElement, DataType, VarDeclaration, ProcDeclaration,
-  CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls, UnitTemplates;
+  CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls, UnitTemplates, UnitMapping;
 
 { TIDEController }
 
@@ -87,7 +89,10 @@ var
   LUnit: TIDEUnit;
 begin
   LPage := TIDETabSheet.Create(Self, FPageControl);
-
+  if Assigned(FIDEData) then
+  begin
+    LPage.IDEPage.IDEIcons := FIDEData.IDEImages;
+  end;
   if Assigned(AUnit) then
   begin
     LUnit := AUnit;
@@ -218,11 +223,19 @@ begin
 end;
 
 procedure TIDEController.Compile;
+var
+  LFileName: string;
 begin
   FLog.Clear;
   FErrors := 0;
   CompileFile(FProject.ProjectUnit.FileName, FProject.Optimize, FProject.Assemble,
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
+  LFileName := ExtractFilePath(FProject.ProjectUnit.FileName) + '\mapping.txt';
+  if FileExists(LFileName) then
+  begin
+    FDebugger.LoadMappingFromFile(LFileName);
+    UpdateAllMappings();
+  end;
 end;
 
 procedure TIDEController.Copy;
@@ -241,6 +254,7 @@ begin
   inherited Create(AOwner);
   FPageControl := APageControl;
   FPageControl.OnChange := PageControlChange;
+  FDebugger := TDebugger.Create();
   FPeekCompiler := TCompiler.Create();
   FPeekCompiler.PeekMode := True;
   ACodeTree.NodeDataSize := SizeOf(TCodeNodeData);
@@ -283,7 +297,7 @@ end;
 
 destructor TIDEController.Destroy;
 begin
-
+  FDebugger.Free;
   inherited;
 end;
 
@@ -482,7 +496,7 @@ begin
   LPage := GetActiveIDEPage();
   if Assigned(LPage) then
   begin
-    if FPeekCompiler.PeekCompile(LPage.IDEEdit.Text, LPage.IDEUnit.Caption, LUnit) then
+    if FPeekCompiler.PeekCompile(LPage.IDEEdit.Text, LPage.IDEUnit.Caption, LPage.IDEUnit = FProject.ProjectUnit, LUnit) then
     begin
       FCodeTreeController.BuildCodeTreeFromUnit(LUnit);
     end;
@@ -605,6 +619,21 @@ begin
   if Assigned(LPage) then
   begin
     LPage.IDEEdit.Undo();
+  end;
+end;
+
+procedure TIDEController.UpdateAllMappings;
+var
+  LTab: TIDETabSheet;
+  LPage: TIDEPage;
+  i: Integer;
+  LUnitMapping: TUnitMapping;
+begin
+  for i := 0 to FPageControl.PageCount - 1 do
+  begin
+    LTab := TIDETabSheet(FPageControl.Pages[i]);
+    LTab.IDEPage.IDEEdit.UpdateMapping(FDebugger.GetUnitMapping(LTab.IDEPage.IDEUnit.Caption));
+    LTab.IDEPage.IDEEdit.Repaint();
   end;
 end;
 
