@@ -22,6 +22,7 @@ type
     Options2: TMenuItem;
     ToolBarDisabledImages: TImageList;
     dlgFindReplace: TJvFindReplace;
+    IDEImages: TImageList;
   private
     { Private declarations }
   public
