@@ -3,7 +3,8 @@ unit IDEEdit;
 interface
 
 uses
-  Classes, Types, Controls, SynEdit, SimpleRefactor, SynEditTextBuffer, Generics.Collections, LineInfo;
+  Classes, Types, Controls, SysUtils, SynEdit, SimpleRefactor, SynEditTextBuffer, Generics.Collections, LineInfo,
+  UnitMapping;
 
 type
   TIDEEdit = class(TSynEdit)
@@ -28,15 +29,27 @@ type
     procedure SaveToFile(AFile: string);
     procedure LoadFromFile(AFile: string);
     procedure MarkAllLines(AState: TLineState);
+    procedure ClearMappings();
+    procedure UpdateMapping(AMapping: TUnitMapping);
     property Refactor: TSimpleRefactor read FRefactor;
   end;
 
 implementation
 
 uses
-  SynHighlighterPas, SynEditSearch, Graphics;
+  SynHighlighterPas, SynEditSearch, Graphics, LineMapping;
 
 { TIDEEdit }
+
+procedure TIDEEdit.ClearMappings;
+var
+  LInfo: TLineInfo;
+begin
+  for LInfo in FLineInfo do
+  begin
+    LInfo.Mapping.Clear();
+  end;
+end;
 
 constructor TIDEEdit.Create(AOwner: TComponent);
 begin
@@ -47,6 +60,7 @@ begin
   Highlighter := TSynPasSyn.Create(Self);
   TSynPasSyn(Highlighter).AsmAttri.Foreground := clBlack;
   TSynPasSyn(Highlighter).KeyAttri.Foreground := clNavy;
+  TSynPasSyn(Highlighter).CommentAttri.Foreground := clGreen;
   Name := 'IDEEdit';
   Gutter.ShowLineNumbers := True;
   WantTabs := True;
@@ -78,10 +92,10 @@ var
 begin
   if (FLineInfo.Count > 0) then
   begin
-//    if (FLineInfo.Items[ALine-1].Index > - 1) then
-//    begin
-//      BookMarkOptions.BookmarkImages.Draw(Canvas, X, Y, FLineInfo.Items[ALine-1].Index);
-//    end;
+    if (FLineInfo.Items[ALine-1].IsPossibleBreakPoint) and Assigned(BookMarkOptions.BookmarkImages) then
+    begin
+      BookMarkOptions.BookmarkImages.Draw(Canvas, X, Y, 0);
+    end;
     if FLineInfo.Items[ALine-1].State = ltNone then Exit;
     
     if FLineInfo.Items[ALine-1].State = ltModified then
@@ -186,6 +200,20 @@ procedure TIDEEdit.SaveToFile(AFile: string);
 begin
   Lines.SaveToFile(AFile);
   MarkAllLines(ltSaved);
+end;
+
+procedure TIDEEdit.UpdateMapping(AMapping: TUnitMapping);
+var
+  LMapping: TLineMapping;
+begin
+  ClearMappings();
+  for LMapping in AMapping.Mapping do
+  begin
+    if (LMapping.UnitLine > 0) and (LMapping.UnitLine <= FLineInfo.Count) then
+    begin
+      FLineInfo.Items[LMapping.UnitLine - 1].Mapping.Assign(LMapping);
+    end;
+  end;
 end;
 
 end.
