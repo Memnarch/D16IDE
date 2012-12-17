@@ -14,6 +14,7 @@ type
     FIDEUnit: TIDEUnit;
     FSearchForm: TSimpleSearchForm;
     FOnUnitRenamed: TNotifyEvent;
+    FIDEIcons: TImageList;
     procedure SetIDEUnit(const Value: TIDEUnit);
     function GetIsPartOfProject: Boolean;
     function GetNeedsSaving: Boolean;
@@ -21,6 +22,7 @@ type
     procedure DoOnUnitRenamed();
     procedure HandleAfterSave(Sender: TObject);
     procedure HandleAfterLoad(Sender: TObject);
+    procedure SetIDEIcons(const Value: TImageList);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -33,6 +35,7 @@ type
     property NeedsSaving: Boolean read GetNeedsSaving;
     property IDEEdit: TIDEEdit read FIDEEdit;
     property IDEUnit: TIDEUnit read FIDEUnit write SetIDEUnit;
+    property IDEIcons: TImageList read FIDEIcons write SetIDEIcons;
     property OnUnitRenamed: TNotifyEvent read FOnUnitRenamed write FOnUnitRenamed;
   end;
 
@@ -116,6 +119,12 @@ end;
 procedure TIDEPage.HideSearch;
 begin
   FSearchForm.Visible := False;
+end;
+
+procedure TIDEPage.SetIDEIcons(const Value: TImageList);
+begin
+  FIDEIcons := Value;
+  FIDEEdit.BookMarkOptions.BookmarkImages := Value;
 end;
 
 procedure TIDEPage.SetIDEUnit(const Value: TIDEUnit);
