@@ -271,6 +271,7 @@ var
   LData: PProjectNodeData;
   LUnit: TIDEUnit;
 begin
+  LUnit := nil;
   GetCursorPos(LPos);
   LPos := ProjectTree.ScreenToClient(LPos);
   LNode := ProjectTree.GetNodeAt(LPos.X, LPos.Y);
