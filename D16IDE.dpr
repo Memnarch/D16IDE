@@ -22,7 +22,9 @@ uses
   IDEActionModule in 'IDEActionModule.pas' {IDEActions: TDataModule},
   SearchForm in 'SearchForm.pas' {SimpleSearchForm},
   Debug in 'Debug.pas',
-  LineInfo in 'LineInfo.pas';
+  LineInfo in 'LineInfo.pas',
+  Debugger in 'Debugger.pas',
+  UnitMapping in 'UnitMapping.pas';
 
 {$R *.res}
 
