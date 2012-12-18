@@ -24,7 +24,9 @@ uses
   Debug in 'Debug.pas',
   LineInfo in 'LineInfo.pas',
   Debugger in 'Debugger.pas',
-  UnitMapping in 'UnitMapping.pas';
+  UnitMapping in 'UnitMapping.pas',
+  BreakPoint in 'BreakPoint.pas',
+  ColorFunctions in 'ColorFunctions.pas';
 
 {$R *.res}
 
