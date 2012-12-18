@@ -3,16 +3,20 @@ unit Debugger;
 interface
 
 uses
-  Classes, Types, SysUtils, Generics.Collections, UnitMapping;
+  Classes, Types, SysUtils, Generics.Collections, UnitMapping, BreakPoint;
 
 type
   TDebugger = class
   private
     FMappings: TObjectList<TUnitMapping>;
+    procedure ClearMappings();
   public
     constructor Create();
     destructor Destroy(); override;
+    procedure Clear();
     procedure LoadMappingFromFile(AFile: string);
+    procedure AddBreakPoint(AUnit: string; AUnitLine: Integer);
+    procedure DeleteBreakPoint(AUnit: string; AUnitLine: Integer);
     function GetUnitMapping(AUnit: string): TUnitMapping;
   end;
 
@@ -23,9 +27,54 @@ uses
 
 { TDebugger }
 
+procedure TDebugger.AddBreakPoint(AUnit: string; AUnitLine: Integer);
+var
+  LBreak: TBreakPoint;
+begin
+  LBreak := TBreakPoint.Create();
+  try
+    LBreak.UnitLine := AUnitLine;
+    LBreak.Memory := -1;
+    LBreak.State := bpsNormal;
+  finally
+    GetUnitMapping(AUnit).BreakPoints.Add(LBreak);
+  end;
+end;
+
+procedure TDebugger.Clear;
+begin
+  FMappings.Clear();
+end;
+
+procedure TDebugger.ClearMappings;
+var
+  LMapping: TUnitMapping;
+begin
+  for LMapping in FMappings do
+  begin
+    LMapping.Mapping.Clear;
+  end;
+end;
+
 constructor TDebugger.Create;
 begin
   FMappings := TObjectList<TUnitMapping>.Create();
+end;
+
+procedure TDebugger.DeleteBreakPoint(AUnit: string; AUnitLine: Integer);
+var
+  LUnitMapping: TUnitMapping;
+  i: Integer;
+begin
+  LUnitMapping := GetUnitMapping(AUnit);
+  for i := LUnitMapping.BreakPoints.Count - 1 downto 0 do
+  begin
+    if LUnitMapping.BreakPoints.Items[i].UnitLine = AUnitLine then
+    begin
+      LUnitMapping.BreakPoints.Delete(i);
+      Break;
+    end;
+  end;
 end;
 
 destructor TDebugger.Destroy;
@@ -62,7 +111,7 @@ var
   LMapping: TLineMapping;
   LLine: string;
 begin
-  FMappings.Clear();
+  ClearMappings();
   LFile := TStringList.Create();
   try
     LFile.LoadFromFile(AFile);
