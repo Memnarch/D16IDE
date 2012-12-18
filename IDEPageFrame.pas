@@ -113,6 +113,7 @@ end;
 procedure TIDEPage.HandleOnRename(Sender: TObject);
 begin
   FIDEEdit.Refactor.RenameHeader(TIDEUnit(Sender).Caption);
+  FIDEEdit.D16UnitName := TIDEUnit(Sender).Caption;
   DoOnUnitRenamed();
 end;
 
@@ -134,6 +135,7 @@ begin
   FIDEUnit.OnRename := HandleOnRename;
   FIDEUnit.OnAfterSave := HandleAfterSave;
   FIDEUnit.OnAfterLoad := HandleAfterLoad;
+  FIDEEdit.D16UnitName := FIDEUnit.Caption;
   DoOnUnitRenamed();
 end;
 
