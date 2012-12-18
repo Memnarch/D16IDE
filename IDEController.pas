@@ -5,7 +5,7 @@ interface
 uses
   Classes, Types, Windows, Forms, SysUtils, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
-  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger;
+  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping;
 
 type
   TIDEController = class(TComponent)
@@ -30,6 +30,8 @@ type
     procedure PageControlChange(Sender: TObject);
     function GetIsRunning: Boolean;
     procedure SetIDEData(const Value: TIDEData);
+    procedure HandleAddBreakPoint(AUnit: string; ALine: Integer);
+    procedure HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -103,6 +105,8 @@ begin
   end;
   LPage.IDEPage.IDEUnit := LUnit;
   LPage.IDEPage.IDEEdit.OnKeyDown := HandleSynEditKeyDown;
+  LPage.IDEPage.IDEEdit.OnAddBreakPoint := HandleAddBreakPoint;
+  LPage.IDEPage.IDEEdit.OnDeleteBreakPoint := HandleDeleteBreakPoint;
   if not Assigned(AUnit)  then
   begin
     if AFile = '' then
@@ -124,6 +128,7 @@ begin
   begin
     FProject.Units.Add(LUnit);
   end;
+  LPage.IDEPage.IDEEdit.UpdateMapping(FDebugger.GetUnitMapping(LUnit.Caption));
 end;
 
 procedure TIDEController.BuildCompletionLists(ACompletion, AInsert: TStrings);
@@ -188,6 +193,7 @@ procedure TIDEController.ClearProjects;
 var
   i: Integer;
 begin
+  FDebugger.Clear();
   FProjectTreeController.Project := nil;
   if Assigned(FProject) then
   begin
@@ -382,6 +388,11 @@ begin
   end;
 end;
 
+procedure TIDEController.HandleAddBreakPoint(AUnit: string; ALine: Integer);
+begin
+  FDebugger.AddBreakPoint(AUnit, ALine);
+end;
+
 procedure TIDEController.HandleCompileMessage(AMessage, AUnitName: string;
   ALine: Integer; ALevel: TMessageLevel);
 begin
@@ -401,6 +412,11 @@ procedure TIDEController.HandleCPUViewClose(Sender: TObject;
 begin
   ACtion := caHide;
 //  FIDEData.actStopExecute(IDEData);
+end;
+
+procedure TIDEController.HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
+begin
+  FDebugger.DeleteBreakPoint(AUnit, ALine);
 end;
 
 procedure TIDEController.HandleEmuMessage(AMessage: string);
@@ -625,9 +641,7 @@ end;
 procedure TIDEController.UpdateAllMappings;
 var
   LTab: TIDETabSheet;
-  LPage: TIDEPage;
   i: Integer;
-  LUnitMapping: TUnitMapping;
 begin
   for i := 0 to FPageControl.PageCount - 1 do
   begin
