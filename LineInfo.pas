@@ -3,7 +3,7 @@ unit LineInfo;
 interface
 
 uses
-  Classes, Types, LineMapping;
+  Classes, Types, LineMapping, BreakPoint;
 
 type
   TLineState = (ltNone, ltModified, ltSaved);
@@ -12,6 +12,7 @@ type
   private
     FState: TLineState;
     FMapping: TLineMapping;
+    FBreakPointState: TBreakPointState;
     function GetIsPossibleBreakPoint: Boolean;
   public
     constructor Create(AState: TLineState);
@@ -19,6 +20,7 @@ type
     property State: TLineState read FState write FState;
     property Mapping: TLineMapping read FMapping;
     property IsPossibleBreakPoint: Boolean read GetIsPossibleBreakPoint;
+    property BreakPointState: TBreakPointState read FBreakPointState write FBreakPointState;
   end;
 
 implementation
