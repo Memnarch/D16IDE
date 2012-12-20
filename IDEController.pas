@@ -30,8 +30,11 @@ type
     procedure PageControlChange(Sender: TObject);
     function GetIsRunning: Boolean;
     procedure SetIDEData(const Value: TIDEData);
+    procedure ResetAllDebugCursors();
     procedure HandleAddBreakPoint(AUnit: string; ALine: Integer);
     procedure HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
+    procedure HandleOnDebugStep(AMapping: TLineMapping);
+    procedure HandleOnRun();
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -57,6 +60,7 @@ type
     procedure HandleEmuMessage(AMessage: string);
     function IDEUnitIsOpen(AUnit: TIDEUnit): Boolean;
     procedure FokusIDEPageByUnit(AUnit: TIDEUnit);
+    procedure FokusIDEEdit(AUnitName: string; ADebugCursor: Integer = -1; AErrorCursor: Integer = -1);
     procedure NewUnit();
     procedure Compile();
     procedure PeekCompile();
@@ -71,6 +75,7 @@ type
     procedure Search();
     procedure FindNext();
     procedure FindPrevious();
+    procedure TraceInto();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
@@ -129,6 +134,7 @@ begin
     FProject.Units.Add(LUnit);
   end;
   LPage.IDEPage.IDEEdit.UpdateMapping(FDebugger.GetUnitMapping(LUnit.Caption));
+  FokusIDEPageByUnit(LUnit);
 end;
 
 procedure TIDEController.BuildCompletionLists(ACompletion, AInsert: TStrings);
@@ -329,6 +335,26 @@ begin
   end;
 end;
 
+procedure TIDEController.FokusIDEEdit(AUnitName: string; ADebugCursor,
+  AErrorCursor: Integer);
+var
+  LUnit: TIDEUnit;
+begin
+  LUnit := FProject.GetUnitByName(AUnitName);
+  if Assigned(LUnit) then
+  begin
+    if LUnit.IsOpen then
+    begin
+      FokusIDEPageByUnit(LUnit);
+    end
+    else
+    begin
+      AddPage(LUnit.Caption, '', LUnit);
+    end;
+    GetActiveIDEPage().IDEEdit.DebugCursor := ADebugCursor;
+  end;
+end;
+
 procedure TIDEController.FokusIDEPageByUnit(AUnit: TIDEUnit);
 var
   i: Integer;
@@ -422,6 +448,16 @@ end;
 procedure TIDEController.HandleEmuMessage(AMessage: string);
 begin
   FLog.Add('Emulator: ' + AMessage);
+end;
+
+procedure TIDEController.HandleOnDebugStep(AMapping: TLineMapping);
+begin
+  FokusIDEEdit(AMapping.D16UnitName, AMapping.UnitLine);
+end;
+
+procedure TIDEController.HandleOnRun;
+begin
+  ResetAllDebugCursors();
 end;
 
 procedure TIDEController.HandleSynEditKeyDown(Sender: TObject; var Key: Word;
@@ -530,6 +566,18 @@ begin
   end;
 end;
 
+procedure TIDEController.ResetAllDebugCursors;
+var
+  LTab: TIDETabSheet;
+  i: Integer;
+begin
+  for i := 0 to FPageControl.PageCount - 1 do
+  begin
+    LTab := TIDETabSheet(FPageControl.Pages[i]);
+    LTab.IDEPage.IDEEdit.DebugCursor := -1;
+  end;
+end;
+
 procedure TIDEController.Run;
 begin
   if not IsRunning then
@@ -540,10 +588,13 @@ begin
     FLog.Clear;
     FEmulator := TD16Emulator.Create();
     FEmulator.OnMessage := HandleEmuMessage;
+    FEmulator.OnRun := HandleOnRun;
     FCpuView.SetEmulator(FEmulator);
     FWatchView.SetEmulator(FEmulator);
     FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
     FEmulator.LoadFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16'), FProject.UseBigEndian);
+    FDebugger.OnStep := HandleOnDebugStep;
+    FDebugger.HookEmulator(FEmulator);
   end;
   FEmulator.Run();
 end;
@@ -617,6 +668,8 @@ procedure TIDEController.Stop;
 begin
   if Assigned(FEmulator) then
   begin
+    FDebugger.UnHookEmulator();
+    FDebugger.OnStep := nil;
     FEmulator.Stop;
     FEmulator.Terminate;
     WaitForSingleObject(FEmulator.Handle, 5000);
@@ -625,6 +678,12 @@ begin
   end;
   FCPUView.Hide;
   FWatchView.Hide;
+  ResetAllDebugCursors();
+end;
+
+procedure TIDEController.TraceInto;
+begin
+  FDebugger.TraceInto();
 end;
 
 procedure TIDEController.Undo;
