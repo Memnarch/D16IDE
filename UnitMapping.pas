@@ -14,6 +14,7 @@ type
   public
     constructor Create();
     destructor Destroy(); override;
+    function GetLineMappingByUnitLine(ALine: Integer): TLineMapping;
     property D16UnitName: string read FD16UnitName write FD16UnitName;
     property Mapping: TObjectList<TLineMapping> read FMapping;
     property BreakPoints: TObjectList<TBreakPoint> read FBreakPoints;
@@ -34,6 +35,21 @@ begin
   FMapping.Free;
   FBreakPoints.Free;
   inherited;
+end;
+
+function TUnitMapping.GetLineMappingByUnitLine(ALine: Integer): TLineMapping;
+var
+  LLine: TLineMapping;
+begin
+  Result := nil;
+  for LLine in FMapping do
+  begin
+    if LLine.UnitLine = ALine then
+    begin
+      Result := LLine;
+      Break;
+    end;
+  end;
 end;
 
 end.
