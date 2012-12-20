@@ -197,7 +197,6 @@ end;
 procedure TIDEEdit.HandleLineInserted(Sender: TObject; Index, Count: Integer);
 var
   i: Integer;
-  LHadBreakPoint: Boolean;
 begin
   if Assigned(FLineInserted) then
   begin
@@ -304,6 +303,7 @@ procedure TIDEEdit.SetDebugCursor(const Value: Integer);
 begin
   FDebugCursor := Value;
   CaretY := Value;
+  Repaint();
 end;
 
 procedure TIDEEdit.ShiftBreakpoints(AFrom: Integer; AOffset: Integer);
