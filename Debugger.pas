@@ -3,27 +3,52 @@ unit Debugger;
 interface
 
 uses
-  Classes, Types, SysUtils, Generics.Collections, UnitMapping, BreakPoint;
+  Classes, Types, SysUtils, Generics.Collections, UnitMapping,LineMapping, BreakPoint, Emulator,
+  EmuTypes;
 
 type
+  TStepEvent = procedure(AMapping: TLineMapping) of object;
+  TStepMode = (smNone, smTraceInto, smStepOver, smRunUntilReturn);
+
   TDebugger = class
   private
     FMappings: TObjectList<TUnitMapping>;
+    FEmulator: TD16Emulator;
+    FLastLine: Integer;
+    FOnStep: TStepEvent;
+    FMode : TStepMode;
+    //original events
+    FHookedRun: TEvent;
+    FHookedPause: TEvent;
+    FHookedStep: TEvent;
+    FHookedAlert: TAlertEvent;
     procedure ClearMappings();
+    procedure HandleOnRun();
+    procedure HandleOnPause();
+    procedure HandleOnStep();
+    procedure HandleOnAlert(var APauseExecution: Boolean);
+    procedure ValidateAllBreakpoints();
+    procedure InjectAllBreakPoints();
+    procedure DoOnStep(AMapping: TLineMapping);
+    function GetBreakPointByAddress(AAddress: Word): TBreakPoint;
+    function GetLineMappingByAddress(AAddress: Word): TLineMapping;
   public
     constructor Create();
     destructor Destroy(); override;
     procedure Clear();
+    procedure HookEmulator(AEmulator: TD16Emulator);
+    procedure UnHookEmulator();
     procedure LoadMappingFromFile(AFile: string);
     procedure AddBreakPoint(AUnit: string; AUnitLine: Integer);
     procedure DeleteBreakPoint(AUnit: string; AUnitLine: Integer);
+    procedure TraceInto();
+    procedure StepOver();
+    procedure RunUntilReturn();
     function GetUnitMapping(AUnit: string): TUnitMapping;
+    property OnStep: TStepEvent read FOnStep write FOnStep;
   end;
 
 implementation
-
-uses
-  LineMapping;
 
 { TDebugger }
 
@@ -36,6 +61,7 @@ begin
     LBreak.UnitLine := AUnitLine;
     LBreak.Memory := -1;
     LBreak.State := bpsNormal;
+    LBreak.D16UnitName := AUnit;
   finally
     GetUnitMapping(AUnit).BreakPoints.Add(LBreak);
   end;
@@ -83,6 +109,53 @@ begin
   inherited;
 end;
 
+procedure TDebugger.DoOnStep(AMapping: TLineMapping);
+begin
+  FMode := smNone;
+  if Assigned(FOnStep) then
+  begin
+    FOnStep(AMapping);
+  end;
+end;
+
+function TDebugger.GetBreakPointByAddress(AAddress: Word): TBreakPoint;
+var
+  LUnitMap: TUnitMapping;
+  LBreak: TBreakPoint;
+begin
+  Result := nil;
+  for LUnitMap in FMappings do
+  begin
+    for LBreak in LUnitMap.BreakPoints do
+    begin
+      if LBreak.Memory = AAddress then
+      begin
+        Result := LBreak;
+        Break;
+      end;
+    end;
+  end;
+end;
+
+function TDebugger.GetLineMappingByAddress(AAddress: Word): TLineMapping;
+var
+  LUnitMap: TUnitMapping;
+  LLine: TLineMapping;
+begin
+  Result := nil;
+  for LUnitMap in FMappings do
+  begin
+    for LLine in LUnitMap.Mapping do
+    begin
+      if LLine.MemoryAddress = AAddress then
+      begin
+        Result := LLine;
+        Break;
+      end;
+    end;
+  end;
+end;
+
 function TDebugger.GetUnitMapping(AUnit: string): TUnitMapping;
 var
   LUnit: TUnitMapping;
@@ -101,6 +174,97 @@ begin
     Result := TUnitMapping.Create();
     FMappings.Add(Result);
     Result.D16UnitName := AUnit;
+  end;
+end;
+
+procedure TDebugger.HandleOnAlert(var APauseExecution: Boolean);
+var
+  LBreak: TBreakPoint;
+begin
+  if Assigned(FHookedAlert) then
+  begin
+    FHookedAlert(APauseExecution);
+  end;
+  LBreak := GetBreakPointByAddress(FEmulator.Registers[CRegPC]);
+  if Assigned(LBreak) and (LBreak.UnitLine <> FLastLine) then
+  begin
+    APauseExecution := True;
+  end;
+end;
+
+procedure TDebugger.HandleOnPause;
+var
+  LMapping: TLineMapping;
+begin
+  if Assigned(FHookedPause) then
+  begin
+    FHookedPause();
+  end;
+  FHookedStep := FEmulator.OnStep;
+  FEmulator.OnStep := HandleOnStep;
+  LMapping := GetLineMappingByAddress(FEmulator.Registers[CRegPC]);
+  if Assigned(LMapping) then
+  begin
+    DoOnStep(LMapping);
+  end
+  else
+  begin
+    TraceInto(); //we resume emulation until we find a fitting mapping spot
+  end;
+end;
+
+procedure TDebugger.HandleOnRun;
+begin
+  if Assigned(FHookedRun) then
+  begin
+    FHookedRun();
+  end;
+  if FMode <> smTraceInto then
+  begin
+    FEmulator.OnStep := nil;
+  end;
+  FLastLine := -1;
+end;
+
+procedure TDebugger.HandleOnStep;
+var
+  LMapping: TLineMapping;
+begin
+  LMapping := GetLineMappingByAddress(FEmulator.Registers[CRegPC]);
+  if Assigned(LMapping) and (LMapping.UnitLine <> FLastLine) then
+  begin
+    FLastLine := LMapping.UnitLine;
+    FEmulator.Pause();
+  end;
+end;
+
+procedure TDebugger.HookEmulator(AEmulator: TD16Emulator);
+begin
+  FEmulator := AEmulator;
+  FHookedRun := FEmulator.OnRun;
+  FHookedPause := FEmulator.OnPause;
+  FHookedAlert := FEmulator.OnAlert;
+  FEmulator.OnPause := HandleOnPause;
+  FEmulator.OnRun := HandleOnRun;
+  FEmulator.OnAlert := HandleOnAlert;
+  InjectAllBreakPoints();
+end;
+
+procedure TDebugger.InjectAllBreakPoints;
+var
+  LBreak: TBreakPoint;
+  LUnitMap: TUnitMapping;
+begin
+  ValidateAllBreakpoints();
+  for LUnitMap in FMappings do
+  begin
+    for LBreak in LUnitMap.BreakPoints do
+    begin
+      if LBreak.Memory > -1 then
+      begin
+        FEmulator.SetAlertPoint(LBreak.Memory, True);
+      end;
+    end;
   end;
 end;
 
@@ -127,6 +291,58 @@ begin
     end;
   finally
     LFile.Free;
+  end;
+end;
+
+procedure TDebugger.RunUntilReturn;
+begin
+
+end;
+
+procedure TDebugger.StepOver;
+begin
+
+end;
+
+procedure TDebugger.TraceInto;
+begin
+  FMode := smTraceInto;
+  FEmulator.Run();
+end;
+
+procedure TDebugger.UnHookEmulator;
+begin
+  FEmulator.OnPause := FHookedPause;
+  FEmulator.OnRun := FHookedRun;
+  FEmulator.OnAlert := FHookedAlert;
+  FEmulator := nil;
+end;
+
+procedure TDebugger.ValidateAllBreakpoints;
+var
+  LUnitMap: TUnitMapping;
+  LLine: TLineMapping;
+  LBreak: TBreakPoint;
+begin
+  for LUnitMap in FMappings do
+  begin
+    for LBreak in LUnitMap.BreakPoints do
+    begin
+      LBreak.Memory := -1;
+      LLine := LUnitMap.GetLineMappingByUnitLine(LBreak.UnitLine);
+      if Assigned(LLine) then
+      begin
+        LBreak.Memory := LLine.MemoryAddress;
+      end;
+      if LBreak.Memory > -1 then
+      begin
+        LBreak.State := bpsAccepted;
+      end
+      else
+      begin
+        LBreak.State := bpsDenied;
+      end;
+    end;
   end;
 end;
 
