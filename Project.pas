@@ -23,6 +23,7 @@ type
     destructor Destroy(); override;
     procedure SaveToFile(AFile: string);
     procedure LoadFromFile(AFile: string);
+    function GetUnitByName(AName: string): TIDEUnit;
     property ProjectName: string read FProjectName write SetProjectName;
     property ProjectPath: string read FProjectPath write FProjectPath;
     property Units: TObjectList<TIDEUnit> read FUnits;
@@ -56,6 +57,28 @@ begin
   FProjectUnit.Free;
   FProjectSource.Free;
   inherited;
+end;
+
+function TProject.GetUnitByName(AName: string): TIDEUnit;
+var
+  LUnit: TIDEUnit;
+begin
+  Result := nil;
+  if SameText(AName, FProjectUnit.Caption) then
+  begin
+    Result := FProjectUnit;
+  end
+  else
+  begin
+    for LUnit in FUnits do
+    begin
+      if SameText(AName, LUnit.Caption) then
+      begin
+        Result := LUnit;
+        Break;
+      end;
+    end;
+  end;
 end;
 
 procedure TProject.LoadFromFile(AFile: string);
