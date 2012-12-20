@@ -91,6 +91,7 @@ object IDEActions: TIDEActions
     object actStep: TAction
       Caption = 'actStep'
       ImageIndex = 3
+      OnExecute = actStepExecute
     end
     object actStepOver: TAction
       Caption = 'actStepOver'

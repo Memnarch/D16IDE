@@ -61,6 +61,7 @@ type
     procedure actFindExecute(Sender: TObject);
     procedure actFindNextExecute(Sender: TObject);
     procedure actFindPreviousExecute(Sender: TObject);
+    procedure actStepExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
@@ -259,6 +260,11 @@ procedure TIDEActions.actSaveProjectAsExecute(Sender: TObject);
 begin
   FController.Project.ProjectPath := '';
   FController.SaveProject(FController.Project);
+end;
+
+procedure TIDEActions.actStepExecute(Sender: TObject);
+begin
+  FController.TraceInto();
 end;
 
 procedure TIDEActions.actStopExecute(Sender: TObject);
