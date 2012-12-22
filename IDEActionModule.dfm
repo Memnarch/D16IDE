@@ -90,16 +90,22 @@ object IDEActions: TIDEActions
     end
     object actStep: TAction
       Caption = 'actStep'
+      Enabled = False
       ImageIndex = 3
+      ShortCut = 118
       OnExecute = actStepExecute
     end
     object actStepOver: TAction
       Caption = 'actStepOver'
+      Enabled = False
       ImageIndex = 4
+      ShortCut = 119
     end
     object actStepUntilReturn: TAction
       Caption = 'actStepUntilReturn'
+      Enabled = False
       ImageIndex = 5
+      ShortCut = 8311
     end
     object actCopy: TAction
       Caption = 'actCopy'

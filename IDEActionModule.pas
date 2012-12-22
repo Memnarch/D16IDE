@@ -66,10 +66,12 @@ type
     FController: TIDEController;
     FIDEData: TIDEData;
     procedure SetIDEData(const Value: TIDEData);
+    procedure HandleStateChange(AState: TControllerState);
+    procedure SetController(const Value: TIDEController);
     { Private declarations }
   public
     { Public declarations }
-    property Controller: TIDEController read FController write FController;
+    property Controller: TIDEController read FController write SetController;
     property IDEData: TIDEData read FIDEData write SetIDEData;
   end;
 
@@ -168,8 +170,6 @@ end;
 procedure TIDEActions.actPauseExecute(Sender: TObject);
 begin
   FController.Pause;
-  actRun.Enabled := True;
-  actPause.Enabled := False;
 end;
 
 procedure TIDEActions.actPeekCompileExecute(Sender: TObject);
@@ -202,10 +202,6 @@ begin
   end;
   if (FController.Errors = 0) and (FController.Project.Assemble) and Boolean(actCompile.Tag) then
   begin
-    actCompile.Enabled := False;
-    actRun.Enabled := False;
-    actStop.Enabled := True;
-    actPause.Enabled := True;
     FController.Run();
   end;
 end;
@@ -270,10 +266,6 @@ end;
 procedure TIDEActions.actStopExecute(Sender: TObject);
 begin
   FController.Stop();
-  actCompile.Enabled := True;
-  actRun.Enabled := True;
-  actStop.Enabled := False;
-  actPause.Enabled := False;
 end;
 
 procedure TIDEActions.actUndoExecute(Sender: TObject);
@@ -284,6 +276,29 @@ end;
 procedure TIDEActions.DataModuleCreate(Sender: TObject);
 begin
   actSaveAll.ShortCut := ShortCut(Ord('S'), [ssCtrl, ssShift]);
+end;
+
+procedure TIDEActions.HandleStateChange(AState: TControllerState);
+begin
+  actRun.Enabled := (AState = csStopped) or (AState = csPaused);
+  actPause.Enabled := AState = csRunning;
+  actStop.Enabled := AState = csRunning;
+  actStep.Enabled := AState = csPaused;
+  actStepOver.Enabled := AState = csPaused;
+  actStepUntilReturn.Enabled := AState = csPaused;
+end;
+
+procedure TIDEActions.SetController(const Value: TIDEController);
+begin
+  if Assigned(FController) then
+  begin
+    FController.OnChange := nil;
+  end;
+  FController := Value;
+  if Assigned(FController) then
+  begin
+    FController.OnChange := HandleStateChange;
+  end;
 end;
 
 procedure TIDEActions.SetIDEData(const Value: TIDEData);

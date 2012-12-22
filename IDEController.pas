@@ -8,6 +8,10 @@ uses
   ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping;
 
 type
+  TControllerState = (csStopped, csRunning, csPaused);
+
+  TStateChangeEvent = procedure(AState: TControllerState) of object;
+
   TIDEController = class(TComponent)
   private
     FProject: TProject;
@@ -25,6 +29,7 @@ type
     FLog: TStrings;
     FDebugger: TDebugger;
     FIDEData: TIDEData;
+    FOnChange: TStateChangeEvent;
   //events
     procedure UpdateAllMappings();
     procedure PageControlChange(Sender: TObject);
@@ -35,6 +40,8 @@ type
     procedure HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
     procedure HandleOnDebugStep(AMapping: TLineMapping);
     procedure HandleOnRun();
+    procedure HandleOnPause();
+    procedure DoOnChange(AState: TControllerState);
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -80,6 +87,7 @@ type
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
     property IDEData: TIDEData read FIDEData write SetIDEData;
+    property OnChange: TStateChangeEvent read FOnChange write FOnChange;
   end;
 
 implementation
@@ -313,6 +321,14 @@ begin
   inherited;
 end;
 
+procedure TIDEController.DoOnChange(AState: TControllerState);
+begin
+  if Assigned(FOnChange) then
+  begin
+    FOnChange(AState);
+  end;
+end;
+
 procedure TIDEController.FindNext;
 var
   LPage: TIDEPage;
@@ -455,6 +471,11 @@ begin
   FokusIDEEdit(AMapping.D16UnitName, AMapping.UnitLine);
 end;
 
+procedure TIDEController.HandleOnPause;
+begin
+  DoOnChange(csPaused);
+end;
+
 procedure TIDEController.HandleOnRun;
 begin
   ResetAllDebugCursors();
@@ -589,6 +610,7 @@ begin
     FEmulator := TD16Emulator.Create();
     FEmulator.OnMessage := HandleEmuMessage;
     FEmulator.OnRun := HandleOnRun;
+    FEmulator.OnPause := HandleOnPause;
     FCpuView.SetEmulator(FEmulator);
     FWatchView.SetEmulator(FEmulator);
     FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
@@ -596,6 +618,7 @@ begin
     FDebugger.OnStep := HandleOnDebugStep;
     FDebugger.HookEmulator(FEmulator);
   end;
+  DoOnChange(csRunning);
   FEmulator.Run();
 end;
 
@@ -679,6 +702,7 @@ begin
   FCPUView.Hide;
   FWatchView.Hide;
   ResetAllDebugCursors();
+  DoOnChange(csStopped);
 end;
 
 procedure TIDEController.TraceInto;
