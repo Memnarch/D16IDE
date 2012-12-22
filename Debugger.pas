@@ -21,11 +21,17 @@ type
     FHookedRun: TEvent;
     FHookedPause: TEvent;
     FHookedStep: TEvent;
+    FHookedCall: TEvent;
+    FHookedReturn: TEvent;
     FHookedAlert: TAlertEvent;
+    FCallLevel: Integer;
+    FCurrentCallLevel: Integer;
     procedure ClearMappings();
     procedure HandleOnRun();
     procedure HandleOnPause();
     procedure HandleOnStep();
+    procedure HandleCall();
+    procedure HandleReturn();
     procedure HandleOnAlert(var APauseExecution: Boolean);
     procedure ValidateAllBreakpoints();
     procedure InjectAllBreakPoints();
@@ -177,6 +183,15 @@ begin
   end;
 end;
 
+procedure TDebugger.HandleCall;
+begin
+  if Assigned(FHookedCall) then
+  begin
+    FHookedCall();
+  end;
+  Inc(FCallLevel);
+end;
+
 procedure TDebugger.HandleOnAlert(var APauseExecution: Boolean);
 var
   LBreak: TBreakPoint;
@@ -219,7 +234,7 @@ begin
   begin
     FHookedRun();
   end;
-  if FMode <> smTraceInto then
+  if (FMode <> smTraceInto) and (FMode <> smStepOver) then
   begin
     FEmulator.OnStep := nil;
   end;
@@ -230,10 +245,30 @@ procedure TDebugger.HandleOnStep;
 var
   LMapping: TLineMapping;
 begin
+  if (FMode = smStepOver) then
+  begin
+    if (FCallLevel <> FCurrentCallLevel) then
+    begin
+      Exit;
+    end;
+  end;
   LMapping := GetLineMappingByAddress(FEmulator.Registers[CRegPC]);
   if Assigned(LMapping) and (LMapping.UnitLine <> FLastLine) then
   begin
     FLastLine := LMapping.UnitLine;
+    FEmulator.Pause();
+  end;
+end;
+
+procedure TDebugger.HandleReturn;
+begin
+  if Assigned(FHookedReturn) then
+  begin
+    FHookedReturn();
+  end;
+  Dec(FCallLevel);
+  if (FMode = smRunUntilReturn) then
+  begin
     FEmulator.Pause();
   end;
 end;
@@ -243,10 +278,15 @@ begin
   FEmulator := AEmulator;
   FHookedRun := FEmulator.OnRun;
   FHookedPause := FEmulator.OnPause;
+  FHookedCall := FEmulator.OnCall;
+  FHookedReturn := FEmulator.OnReturn;
   FHookedAlert := FEmulator.OnAlert;
   FEmulator.OnPause := HandleOnPause;
   FEmulator.OnRun := HandleOnRun;
   FEmulator.OnAlert := HandleOnAlert;
+  FEmulator.OnCall := HandleCall;
+  FEmulator.OnReturn := HandleReturn;
+  FCallLevel := 0;
   InjectAllBreakPoints();
 end;
 
@@ -296,12 +336,15 @@ end;
 
 procedure TDebugger.RunUntilReturn;
 begin
-
+  FMode := smRunUntilReturn;
+  FEmulator.Run;
 end;
 
 procedure TDebugger.StepOver;
 begin
-
+  FMode := smStepOver;
+  FCurrentCallLevel := FCallLevel;
+  FEmulator.Run;
 end;
 
 procedure TDebugger.TraceInto;
@@ -315,6 +358,8 @@ begin
   FEmulator.OnPause := FHookedPause;
   FEmulator.OnRun := FHookedRun;
   FEmulator.OnAlert := FHookedAlert;
+  FEmulator.OnCall := FHookedCall;
+  FEmulator.OnReturn := FHookedReturn;
   FEmulator := nil;
 end;
 

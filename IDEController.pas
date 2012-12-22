@@ -83,6 +83,8 @@ type
     procedure FindNext();
     procedure FindPrevious();
     procedure TraceInto();
+    procedure StepOver();
+    procedure RunUntilReturn();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
@@ -622,6 +624,11 @@ begin
   FEmulator.Run();
 end;
 
+procedure TIDEController.RunUntilReturn;
+begin
+  FDebugger.RunUntilReturn();
+end;
+
 function TIDEController.SaveProject(AProject: TProject): Boolean;
 begin
   Result := False;
@@ -685,6 +692,11 @@ procedure TIDEController.SetIDEData(const Value: TIDEData);
 begin
   FIDEData := Value;
   FProjectTreeController.Images := FIDEData.TreeImages;
+end;
+
+procedure TIDEController.StepOver;
+begin
+  FDebugger.StepOver();
 end;
 
 procedure TIDEController.Stop;

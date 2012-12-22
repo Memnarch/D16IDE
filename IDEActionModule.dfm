@@ -100,12 +100,14 @@ object IDEActions: TIDEActions
       Enabled = False
       ImageIndex = 4
       ShortCut = 119
+      OnExecute = actStepOverExecute
     end
     object actStepUntilReturn: TAction
       Caption = 'actStepUntilReturn'
       Enabled = False
       ImageIndex = 5
       ShortCut = 8311
+      OnExecute = actStepUntilReturnExecute
     end
     object actCopy: TAction
       Caption = 'actCopy'

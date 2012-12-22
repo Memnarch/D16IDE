@@ -62,6 +62,8 @@ type
     procedure actFindNextExecute(Sender: TObject);
     procedure actFindPreviousExecute(Sender: TObject);
     procedure actStepExecute(Sender: TObject);
+    procedure actStepOverExecute(Sender: TObject);
+    procedure actStepUntilReturnExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
@@ -263,6 +265,16 @@ begin
   FController.TraceInto();
 end;
 
+procedure TIDEActions.actStepOverExecute(Sender: TObject);
+begin
+  FController.StepOver();
+end;
+
+procedure TIDEActions.actStepUntilReturnExecute(Sender: TObject);
+begin
+  FController.RunUntilReturn();
+end;
+
 procedure TIDEActions.actStopExecute(Sender: TObject);
 begin
   FController.Stop();
@@ -282,7 +294,7 @@ procedure TIDEActions.HandleStateChange(AState: TControllerState);
 begin
   actRun.Enabled := (AState = csStopped) or (AState = csPaused);
   actPause.Enabled := AState = csRunning;
-  actStop.Enabled := AState = csRunning;
+  actStop.Enabled := AState <> csStopped;
   actStep.Enabled := AState = csPaused;
   actStepOver.Enabled := AState = csPaused;
   actStepUntilReturn.Enabled := AState = csPaused;
