@@ -147,7 +147,7 @@ begin
   ACompletion.Clear;
   AInsert.Clear;
   LUnitName := ChangeFileExt(GetActiveIDEPage().IDEUnit.Caption, '');
-  LActiveUnit :=  FPeekCompiler.GetUnitByName(LUnitName);
+  LActiveUnit :=  FPeekCompiler.Units.GetUnitByName(LUnitName);
   if not Assigned(LActiveUnit) then
   begin
     Exit;
