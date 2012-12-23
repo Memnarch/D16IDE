@@ -5,7 +5,8 @@ interface
 uses
   Classes, Types, Windows, Forms, SysUtils, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
-  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping;
+  ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping,
+  RoutineMapping;
 
 type
   TControllerState = (csStopped, csRunning, csPaused);
@@ -38,7 +39,7 @@ type
     procedure ResetAllDebugCursors();
     procedure HandleAddBreakPoint(AUnit: string; ALine: Integer);
     procedure HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
-    procedure HandleOnDebugStep(AMapping: TLineMapping);
+    procedure HandleOnDebugStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);
     procedure HandleOnRun();
     procedure HandleOnPause();
     procedure DoOnChange(AState: TControllerState);
@@ -285,6 +286,7 @@ begin
   FCpuView := ACPUView;
   FCpuView.OnClose := HandleCPUViewClose;
   FWatchView := AWatchView;
+  FWatchView.Debugger := FDebugger;
   FSynCompletionProposal := ACompletionProposal;
   FLog := ALog;
   FLastPeek := Now();
@@ -468,9 +470,11 @@ begin
   FLog.Add('Emulator: ' + AMessage);
 end;
 
-procedure TIDEController.HandleOnDebugStep(AMapping: TLineMapping);
+procedure TIDEController.HandleOnDebugStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);
 begin
   FokusIDEEdit(AMapping.D16UnitName, AMapping.UnitLine);
+  FWatchView.UpdateData(ARoutine);
+  FCpuView.UpdateData();
 end;
 
 procedure TIDEController.HandleOnPause;
@@ -614,7 +618,6 @@ begin
     FEmulator.OnRun := HandleOnRun;
     FEmulator.OnPause := HandleOnPause;
     FCpuView.SetEmulator(FEmulator);
-    FWatchView.SetEmulator(FEmulator);
     FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
     FEmulator.LoadFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16'), FProject.UseBigEndian);
     FDebugger.OnStep := HandleOnDebugStep;
