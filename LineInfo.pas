@@ -25,6 +25,9 @@ type
 
 implementation
 
+uses
+  VarMapping;
+
 { TLineInfo }
 
 { TLineInfo }
@@ -43,7 +46,7 @@ end;
 
 function TLineInfo.GetIsPossibleBreakPoint: Boolean;
 begin
-  Result := (FMapping.ElementName = '') and (FMapping.MemoryAddress >= 0);
+  Result := FMapping.IsPossibleBreakPoint and (FMapping.MemoryAddress >= 0);
 end;
 
 end.
