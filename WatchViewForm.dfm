@@ -5,7 +5,7 @@ object WatchView: TWatchView
   BorderStyle = bsNone
   Caption = 'WatchView'
   ClientHeight = 397
-  ClientWidth = 308
+  ClientWidth = 182
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,17 +15,17 @@ object WatchView: TWatchView
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
-  object ValueListEditor1: TValueListEditor
+  object Values: TValueListEditor
     Left = 0
     Top = 0
-    Width = 308
+    Width = 182
     Height = 397
     Align = alClient
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
     TabOrder = 0
-    ExplicitWidth = 306
-    ExplicitHeight = 300
+    ExplicitWidth = 283
     ColWidths = (
-      150
-      152)
+      92
+      84)
   end
 end
