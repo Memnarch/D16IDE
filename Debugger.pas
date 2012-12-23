@@ -4,10 +4,10 @@ interface
 
 uses
   Classes, Types, SysUtils, Generics.Collections, UnitMapping,LineMapping, BreakPoint, Emulator,
-  EmuTypes;
+  EmuTypes, RoutineMapping;
 
 type
-  TStepEvent = procedure(AMapping: TLineMapping) of object;
+  TStepEvent = procedure(AMapping: TLineMapping; ARoutine: TRoutineMapping) of object;
   TStepMode = (smNone, smTraceInto, smStepOver, smRunUntilReturn);
 
   TDebugger = class
@@ -26,6 +26,8 @@ type
     FHookedAlert: TAlertEvent;
     FCallLevel: Integer;
     FCurrentCallLevel: Integer;
+    FCallStack: TStack<Word>;
+    FRoutineMapping: TRoutineMapping;
     procedure ClearMappings();
     procedure HandleOnRun();
     procedure HandleOnPause();
@@ -35,9 +37,10 @@ type
     procedure HandleOnAlert(var APauseExecution: Boolean);
     procedure ValidateAllBreakpoints();
     procedure InjectAllBreakPoints();
-    procedure DoOnStep(AMapping: TLineMapping);
+    procedure DoOnStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);
     function GetBreakPointByAddress(AAddress: Word): TBreakPoint;
     function GetLineMappingByAddress(AAddress: Word): TLineMapping;
+    function GetRoutineMappingByAddress(AAddress: Word): TRoutineMapping;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -51,10 +54,15 @@ type
     procedure StepOver();
     procedure RunUntilReturn();
     function GetUnitMapping(AUnit: string): TUnitMapping;
+    function ReadWord(AAddress: Word): Word;
+    function ReadRegister(AIndex: Byte): Word;
     property OnStep: TStepEvent read FOnStep write FOnStep;
   end;
 
 implementation
+
+uses
+  VarMapping;
 
 { TDebugger }
 
@@ -91,6 +99,7 @@ end;
 constructor TDebugger.Create;
 begin
   FMappings := TObjectList<TUnitMapping>.Create();
+  FCallStack := TStack<Word>.Create();
 end;
 
 procedure TDebugger.DeleteBreakPoint(AUnit: string; AUnitLine: Integer);
@@ -112,15 +121,16 @@ end;
 destructor TDebugger.Destroy;
 begin
   FMappings.Free;
+  FCallStack.Free;
   inherited;
 end;
 
-procedure TDebugger.DoOnStep(AMapping: TLineMapping);
+procedure TDebugger.DoOnStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);
 begin
   FMode := smNone;
   if Assigned(FOnStep) then
   begin
-    FOnStep(AMapping);
+    FOnStep(AMapping, ARoutine);
   end;
 end;
 
@@ -162,6 +172,25 @@ begin
   end;
 end;
 
+function TDebugger.GetRoutineMappingByAddress(AAddress: Word): TRoutineMapping;
+var
+  LUnitMap: TUnitMapping;
+  LLine: TLineMapping;
+begin
+  Result := nil;
+  for LUnitMap in FMappings do
+  begin
+    for LLine in LUnitMap.Mapping do
+    begin
+      if (LLine.MemoryAddress = AAddress) and (LLine is TRoutineMapping) then
+      begin
+        Result := TRoutineMapping(LLine);
+        Break;
+      end;
+    end;
+  end;
+end;
+
 function TDebugger.GetUnitMapping(AUnit: string): TUnitMapping;
 var
   LUnit: TUnitMapping;
@@ -189,6 +218,8 @@ begin
   begin
     FHookedCall();
   end;
+  FCallStack.Push(FEmulator.Registers[CRegPC]);
+  FRoutineMapping := GetRoutineMappingByAddress(FCallStack.Peek);
   Inc(FCallLevel);
 end;
 
@@ -220,7 +251,7 @@ begin
   LMapping := GetLineMappingByAddress(FEmulator.Registers[CRegPC]);
   if Assigned(LMapping) then
   begin
-    DoOnStep(LMapping);
+    DoOnStep(LMapping, FRoutineMapping);
   end
   else
   begin
@@ -238,6 +269,14 @@ begin
   begin
     FEmulator.OnStep := nil;
   end;
+  if FCallStack.Count > 0 then
+  begin
+    FRoutineMapping := GetRoutineMappingByAddress(FCallStack.Peek);
+  end
+  else
+  begin
+    FRoutineMapping := nil;
+  end;
   FLastLine := -1;
 end;
 
@@ -247,7 +286,7 @@ var
 begin
   if (FMode = smStepOver) then
   begin
-    if (FCallLevel <> FCurrentCallLevel) then
+    if (FCallLevel > FCurrentCallLevel) then
     begin
       Exit;
     end;
@@ -267,6 +306,15 @@ begin
     FHookedReturn();
   end;
   Dec(FCallLevel);
+  FCallStack.Pop;
+  if FCallStack.Count > 0 then
+  begin
+    FRoutineMapping := GetRoutineMappingByAddress(FCallStack.Peek);
+  end
+  else
+  begin
+    FRoutineMapping := nil;
+  end;
   if (FMode = smRunUntilReturn) then
   begin
     FEmulator.Pause();
@@ -322,7 +370,21 @@ begin
     for LLine in LFile do
     begin
       try
-        LMapping := TLineMapping.Create();
+        if Pos('%', LLine) > 1  then
+        begin
+          LMapping := TRoutineMapping.Create();
+        end
+        else
+        begin
+          if Pos('#', LLine) > 1 then
+          begin
+            LMapping := TVarMapping.Create();
+          end
+          else
+          begin
+            LMapping := TLineMapping.Create();
+          end;
+        end;
         LMapping.ReadFromLine(LLine);
       finally
         LUnit := GetUnitMapping(LMapping.D16UnitName);
@@ -332,6 +394,16 @@ begin
   finally
     LFile.Free;
   end;
+end;
+
+function TDebugger.ReadRegister(AIndex: Byte): Word;
+begin
+  Result := FEmulator.Registers[AIndex];
+end;
+
+function TDebugger.ReadWord(AAddress: Word): Word;
+begin
+  Result := FEmulator.Ram[AAddress];
 end;
 
 procedure TDebugger.RunUntilReturn;
