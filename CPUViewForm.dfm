@@ -17,18 +17,19 @@ object CPUView: TCPUView
   TextHeight = 13
   object Label1: TLabel
     Left = 0
-    Top = 177
+    Top = 209
     Width = 312
     Height = 13
     Align = alTop
     Caption = 'Assembler:'
+    ExplicitTop = 177
     ExplicitWidth = 53
   end
   object RegisterList: TValueListEditor
     Left = 0
     Top = 0
     Width = 312
-    Height = 177
+    Height = 209
     Align = alTop
     Strings.Strings = (
       'A='
@@ -38,7 +39,8 @@ object CPUView: TCPUView
       'Y='
       'Z='
       'I='
-      'J=')
+      'J='
+      'EX=')
     TabOrder = 0
     TitleCaptions.Strings = (
       'Register'
@@ -49,14 +51,16 @@ object CPUView: TCPUView
   end
   object ASMView: TListBox
     Left = 0
-    Top = 190
+    Top = 222
     Width = 312
-    Height = 410
+    Height = 378
     Align = alClient
     BevelInner = bvNone
     BevelOuter = bvNone
     ItemHeight = 13
     TabOrder = 1
+    ExplicitTop = 224
+    ExplicitHeight = 376
   end
   object pnlBottom: TPanel
     Left = 0
@@ -66,8 +70,6 @@ object CPUView: TCPUView
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitLeft = 8
-    ExplicitTop = 606
     object Label7: TLabel
       Left = 16
       Top = 6

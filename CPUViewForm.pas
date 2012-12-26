@@ -63,6 +63,7 @@ begin
   RegisterList.Values['Z'] := '0x' + IntToHex(FEmu.Registers[CRegZ], 4);
   RegisterList.Values['I'] := '0x' + IntToHex(FEmu.Registers[CRegI], 4);
   RegisterList.Values['J'] := '0x' + IntToHex(FEmu.Registers[CRegJ], 4);
+  RegisterList.Values['EX'] := '0x' + IntToHex(FEmu.Registers[CRegEX], 4);
 
   lbPC.Caption := '0x' + IntToHex(FEmu.Registers[CRegPC], 4);
   lbIA.Caption := '0x' + IntToHex(FEmu.Registers[CRegIA], 4);
