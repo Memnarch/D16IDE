@@ -217,20 +217,16 @@ procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   if FController.IsRunning then
   begin
-    CanClose := False;
-    ShowMessage('Please stop the running emulation before closing the IDE')
-  end
-  else
+    FController.Stop();
+  end;
+  FIDEActions.actSaveAll.Execute();
+  CanClose := Boolean(FIDEActions.actSaveAll.Tag);
+  if not CanClose then
   begin
-    FIDEActions.actSaveAll.Execute();
-    CanClose := Boolean(FIDEActions.actSaveAll.Tag);
-    if not CanClose then
+    if MessageDlg('There are unsaved changes. Exit without saving?', TMsgDlgType.mtWarning,
+      [mbYes, mbNo], 0) = mrYes then
     begin
-      if MessageDlg('There are unsaved changes. Exit without saving?', TMsgDlgType.mtWarning, 
-        [mbYes, mbNo], 0) = mrYes then
-      begin
-        CanClose := True;
-      end;
+      CanClose := True;
     end;
   end;
 end;
