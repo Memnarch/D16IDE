@@ -26,7 +26,8 @@ uses
   Debugger in 'Debugger.pas',
   UnitMapping in 'UnitMapping.pas',
   BreakPoint in 'BreakPoint.pas',
-  ColorFunctions in 'ColorFunctions.pas';
+  ColorFunctions in 'ColorFunctions.pas',
+  AboutDialogForm in 'AboutDialogForm.pas' {AboutDialog};
 
 {$R *.res}
 

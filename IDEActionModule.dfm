@@ -154,5 +154,9 @@ object IDEActions: TIDEActions
       ShortCut = 8306
       OnExecute = actFindPreviousExecute
     end
+    object actAbout: TAction
+      Caption = 'About'
+      OnExecute = actAboutExecute
+    end
   end
 end

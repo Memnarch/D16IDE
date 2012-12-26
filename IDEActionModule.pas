@@ -36,6 +36,7 @@ type
     actReplace: TAction;
     actFindNext: TAction;
     actFindPrevious: TAction;
+    actAbout: TAction;
     procedure actNewUnitExecute(Sender: TObject);
     procedure actCloseUnitByTabExecute(Sender: TObject);
     procedure actSaveActiveExecute(Sender: TObject);
@@ -64,6 +65,7 @@ type
     procedure actStepExecute(Sender: TObject);
     procedure actStepOverExecute(Sender: TObject);
     procedure actStepUntilReturnExecute(Sender: TObject);
+    procedure actAboutExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
@@ -80,11 +82,23 @@ type
 implementation
 
 uses
-  PascalUnit, ProjectOptionDialog, IDEPageFrame, IDEUnit;
+  PascalUnit, ProjectOptionDialog, IDEPageFrame, IDEUnit, ABoutDialogForm;
 
 {$R *.dfm}
 
 { TIDEData }
+
+procedure TIDEActions.actAboutExecute(Sender: TObject);
+var
+  LDialog: TAboutDialog;
+begin
+  LDialog := TAboutDialog.Create(nil);
+  try
+    LDialog.ShowModal();
+  finally
+    LDialog.Free;
+  end;
+end;
 
 procedure TIDEActions.actAddExistingUnitExecute(Sender: TObject);
 begin

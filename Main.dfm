@@ -12,6 +12,7 @@ object MainForm: TMainForm
   Font.Style = []
   Menu = MainMenu
   OldCreateOrder = False
+  Position = poMainFormCenter
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   PixelsPerInch = 96
@@ -381,7 +382,7 @@ object MainForm: TMainForm
     object Help1: TMenuItem
       Caption = 'Help'
       object About1: TMenuItem
-        Caption = 'About'
+        Action = IDEActions.actAbout
       end
     end
   end
