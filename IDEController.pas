@@ -708,8 +708,8 @@ begin
   begin
     FDebugger.UnHookEmulator();
     FDebugger.OnStep := nil;
-    FEmulator.Stop;
-    FEmulator.Terminate;
+    FEmulator.Stop();//emulator terminates on stop
+    Application.ProcessMessages();
     WaitForSingleObject(FEmulator.Handle, 5000);
     FEmulator.Free;
     FEmulator := nil;
