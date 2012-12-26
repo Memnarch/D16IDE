@@ -398,8 +398,8 @@ object AboutDialog: TAboutDialog
   object Label2: TLabel
     Left = 352
     Top = 43
-    Width = 235
-    Height = 30
+    Width = 30
+    Height = 29
     Caption = 'By'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -411,7 +411,7 @@ object AboutDialog: TAboutDialog
   object Label3: TLabel
     Left = 168
     Top = 88
-    Width = 419
+    Width = 400
     Height = 29
     Caption = 'Memnarch from 0x10cforum.com'
     Font.Charset = DEFAULT_CHARSET
@@ -437,12 +437,12 @@ object AboutDialog: TAboutDialog
   object Label5: TLabel
     Left = 8
     Top = 187
-    Width = 248
-    Height = 29
-    Caption = 'Yusuke Kamiyamane'
+    Width = 540
+    Height = 23
+    Caption = 'Yusuke Kamiyamane for his awesome collection of icons'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -24
+    Font.Height = -19
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
@@ -450,12 +450,12 @@ object AboutDialog: TAboutDialog
   object Label6: TLabel
     Left = 8
     Top = 219
-    Width = 423
-    Height = 29
-    Caption = 'For his awesome collection of icons'
+    Width = 441
+    Height = 23
+    Caption = 'Visit him on http://p.yusukekamiyamane.com'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -24
+    Font.Height = -19
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
