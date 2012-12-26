@@ -302,7 +302,10 @@ end;
 procedure TIDEEdit.SetDebugCursor(const Value: Integer);
 begin
   FDebugCursor := Value;
-  CaretY := Value;
+  if FDebugCursor > -1 then
+  begin
+    CaretY := Value;
+  end;
   Repaint();
 end;
 
