@@ -25,6 +25,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_UnitSearchPath>..\SoftwareRenderer;..\D16Pascal;..\D16Pascal\Lexer;..\D16Emulator;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_UsePackage>vclx;vcl;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_110_150;Intraweb_110_150;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DbxClientDriver;DataSnapClient;dbxcds;DataSnapServer;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver;CodeSiteExpressVcl;SynEdit_RXE;VirtualTreesD14</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_DcuOutput>.\$(Config)\$(Platform)</DCC_DcuOutput>
@@ -37,7 +38,6 @@
 			<DCC_K>false</DCC_K>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_UnitSearchPath>..\D16Pascal;..\D16Pascal\Lexer;..\D16Emulator;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>

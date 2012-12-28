@@ -12,6 +12,9 @@
 			<Projects Include="..\D16Emulator\EmulatorProj.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="..\SoftwareRenderer\SoftwareRendererProj.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
 		<Target Name="EmulatorProj:Make">
 			<MSBuild Projects="..\D16Emulator\EmulatorProj.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="SoftwareRendererProj">
+			<MSBuild Projects="..\SoftwareRenderer\SoftwareRendererProj.dproj"/>
+		</Target>
+		<Target Name="SoftwareRendererProj:Clean">
+			<MSBuild Projects="..\SoftwareRenderer\SoftwareRendererProj.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="SoftwareRendererProj:Make">
+			<MSBuild Projects="..\SoftwareRenderer\SoftwareRendererProj.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="D16IDE;CompilerProj;EmulatorProj"/>
+			<CallTarget Targets="D16IDE;CompilerProj;EmulatorProj;SoftwareRendererProj"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="D16IDE:Clean;CompilerProj:Clean;EmulatorProj:Clean"/>
+			<CallTarget Targets="D16IDE:Clean;CompilerProj:Clean;EmulatorProj:Clean;SoftwareRendererProj:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="D16IDE:Make;CompilerProj:Make;EmulatorProj:Make"/>
+			<CallTarget Targets="D16IDE:Make;CompilerProj:Make;EmulatorProj:Make;SoftwareRendererProj:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
