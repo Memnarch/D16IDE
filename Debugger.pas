@@ -400,7 +400,6 @@ end;
 
 function TDebugger.ReadChar(AAddress: Word): AnsiChar;
 var
-  LByte: Byte;
   LWord: Word;
 begin
   LWord := ReadWord(AAddress);
