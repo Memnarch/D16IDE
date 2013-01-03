@@ -55,6 +55,8 @@ type
     procedure RunUntilReturn();
     function GetUnitMapping(AUnit: string): TUnitMapping;
     function ReadWord(AAddress: Word): Word;
+    function ReadString(AAddress: Word): string;
+    function ReadChar(AAddress: Word): AnsiChar;
     function ReadRegister(AIndex: Byte): Word;
     property OnStep: TStepEvent read FOnStep write FOnStep;
   end;
@@ -396,9 +398,31 @@ begin
   end;
 end;
 
+function TDebugger.ReadChar(AAddress: Word): AnsiChar;
+var
+  LByte: Byte;
+  LWord: Word;
+begin
+  LWord := ReadWord(AAddress);
+  Result := AnsiChar(LWord and 127);
+end;
+
 function TDebugger.ReadRegister(AIndex: Byte): Word;
 begin
   Result := FEmulator.Registers[AIndex];
+end;
+
+function TDebugger.ReadString(AAddress: Word): string;
+var
+  LCount: Word;
+  i: Integer;
+begin
+  Result := '';
+  LCount := ReadWord(AAddress);
+  for i := 1 to LCount do
+  begin
+    Result := Result + ReadChar(AAddress + i);
+  end;
 end;
 
 function TDebugger.ReadWord(AAddress: Word): Word;
