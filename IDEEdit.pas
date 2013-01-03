@@ -82,6 +82,8 @@ begin
   TSynPasSyn(Highlighter).AsmAttri.Foreground := clBlack;
   TSynPasSyn(Highlighter).KeyAttri.Foreground := clNavy;
   TSynPasSyn(Highlighter).CommentAttri.Foreground := clGreen;
+  TSynPasSyn(Highlighter).StringAttri.Foreground := clBlue;
+  TSynPasSyn(Highlighter).NumberAttri.Foreground := clBlue;
   Name := 'IDEEdit';
   Gutter.ShowLineNumbers := True;
   WantTabs := True;
