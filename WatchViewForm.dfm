@@ -23,7 +23,6 @@ object WatchView: TWatchView
     Align = alClient
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
     TabOrder = 0
-    ExplicitWidth = 283
     ColWidths = (
       92
       84)

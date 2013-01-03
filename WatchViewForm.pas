@@ -68,6 +68,8 @@ end;
 procedure TWatchView.UpdateData(ARoutine: TRoutineMapping);
 var
   LParameter: TParameter;
+  LValue: Integer;
+  LText: string;
 begin
   Values.Strings.BeginUpdate();
   try
@@ -78,16 +80,34 @@ begin
       begin
         if IsRegisterOnly(LParameter.Access) then
         begin
-          Values.InsertRow(LParameter.Name, IntToStr(FDebugger.ReadRegister(RegisterToIndex(Trim(LParameter.Access)))), True);
+          LValue := FDebugger.ReadRegister(RegisterToIndex(Trim(LParameter.Access)));
         end
         else
         begin
-          Values.InsertRow(LParameter.Name, IntToStr(FDebugger.ReadWord(AccessToAddress(LParameter.Access))), True);
+          LValue := FDebugger.ReadWord(AccessToAddress(LParameter.Access));
         end;
+        case AnsiIndexText(LParameter.TypeName, ['string', 'char']) of
+          0: LText := FDebugger.ReadString(LValue);
+          1: LText := Char(LValue and 127);
+          else
+          begin
+            LText := IntToStr(LValue);
+          end;
+        end;
+        Values.InsertRow(LParameter.Name, LText, True);
       end;
       for LParameter in ARoutine.Locals do
       begin
-        Values.InsertRow(LParameter.Name, IntToStr(FDebugger.ReadWord(AccessToAddress(LParameter.Access))), True);
+        LValue := FDebugger.ReadWord(AccessToAddress(LParameter.Access));
+        case AnsiIndexText(LParameter.TypeName, ['string', 'char']) of
+          0: LText := FDebugger.ReadString(LValue);
+          1: LText := Char(LValue and 127); //FDebugger.ReadChar(LValue);
+          else
+          begin
+            LText := IntToStr(LValue);
+          end;
+        end;
+        Values.InsertRow(LParameter.Name, LText, True);
       end;
     end;
   finally
