@@ -7,6 +7,8 @@ uses
 
 const
   CDefaultUnit = 'unit Name;' + sLineBreak + sLineBreak + sLineBreak +
+    'interface' + sLineBreak + sLineBreak + sLineBreak +
+    'implementation' + sLineBreak + sLineBreak + sLineBreak +
     sLineBreak + sLineBreak + sLineBreak + 'end.';
 
   CDefaultProgramUnit = 'program Name;' + sLineBreak + sLineBreak + sLineBreak +
