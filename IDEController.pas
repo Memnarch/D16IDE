@@ -384,6 +384,7 @@ begin
     if AUnit = TIDETabSheet(FPageControl.Pages[i]).IDEPage.IDEUnit then
     begin
       FPageControl.ActivePageIndex := i;
+      PeekCompile();
       Break;
     end;
   end;
