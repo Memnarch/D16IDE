@@ -180,17 +180,24 @@ procedure TCodeTreeController.HandleGetImageIndex(Sender: TBaseVirtualTree;
   Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
   var Ghosted: Boolean; var ImageIndex: Integer);
 begin
-  case PCodeNodeData(Sender.GetNodeData(Node)).CodeType of
-    ctSection: ImageIndex := 0;
-    ctType: ImageIndex := 1;
-    ctVar: ImageIndex := 2;
-    ctUses: ImageIndex := 3;
-    ctProcedure: ImageIndex := 4;
-    ctFunction: ImageIndex := 5;
-    else
-    begin
-      ImageIndex := -1;
+  if Kind in [ikNormal, ikSelected] then
+  begin
+    case PCodeNodeData(Sender.GetNodeData(Node)).CodeType of
+      ctSection: ImageIndex := 0;
+      ctType: ImageIndex := 1;
+      ctVar: ImageIndex := 2;
+      ctUses: ImageIndex := 3;
+      ctProcedure: ImageIndex := 4;
+      ctFunction: ImageIndex := 5;
+      else
+      begin
+        ImageIndex := -1;
+      end;
     end;
+  end
+  else
+  begin
+    ImageIndex := -1;
   end;
 end;
 
