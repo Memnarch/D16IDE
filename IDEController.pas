@@ -719,6 +719,7 @@ procedure TIDEController.SetIDEData(const Value: TIDEData);
 begin
   FIDEData := Value;
   FProjectTreeController.Images := FIDEData.TreeImages;
+  FCodeTreeController.Images := FIDEData.CodeTreeImages;
 end;
 
 procedure TIDEController.StepOver;

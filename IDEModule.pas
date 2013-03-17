@@ -23,6 +23,7 @@ type
     ToolBarDisabledImages: TImageList;
     dlgFindReplace: TJvFindReplace;
     IDEImages: TImageList;
+    CodeTreeImages: TImageList;
   private
     { Private declarations }
   public
