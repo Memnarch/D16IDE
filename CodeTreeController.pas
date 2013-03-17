@@ -3,7 +3,7 @@ unit CodeTreeController;
 interface
 
 uses
-  Classes, Types, Generics.Collections, VirtualTrees, PascalUnit, CodeElement;
+  Classes, Types, Generics.Collections, VirtualTrees, PascalUnit, CodeElement, ProcDeclaration;
 
 type
   TCodeNodeData = record
@@ -22,6 +22,7 @@ type
     FProcedures: PVirtualNode;
     procedure CreateSectionNodes();
     procedure BuildCodeTreeFromElements(AElements: TObjectList<TCodeElement>);
+    function BuildParameterPostFix(AProc: TProcDeclaration): string;
   public
     constructor Create(ATree: TVirtualStringTree);
     procedure BuildCodeTreeFromUnit(AUnit: TPascalUnit);
@@ -30,7 +31,7 @@ type
 implementation
 
 uses
-  VarDeclaration, ProcDeclaration, DataType;
+  VarDeclaration, DataType;
 
 { TFTreeController }
 
@@ -52,7 +53,7 @@ begin
     if (LElement is TProcDeclaration) and (not TProcDeclaration(LElement).IsDummy) then
     begin
       LNode := FTree.AddChild(FProcedures);
-      PCodeNodeData(FTree.GetNodeData(LNode)).Caption := LElement.Name;
+      PCodeNodeData(FTree.GetNodeData(LNode)).Caption := LElement.Name + BuildParameterPostFix(TProcDeclaration(LElement));
     end;
     if (LElement is TDataType) and (TDataType(LElement) <> TDataType(LElement).BaseType) then
     begin
@@ -92,6 +93,32 @@ begin
   BuildCodeTreeFromElements(AUnit.ImplementationSection);
   FTree.FullExpand(nil);
   FTree.EndUpdate;
+end;
+
+function TCodeTreeController.BuildParameterPostFix(
+  AProc: TProcDeclaration): string;
+var
+  i: Integer;
+  LParameter: TVarDeclaration;
+begin
+  Result := '(';
+  if AProc.Parameters.Count > 0 then
+  begin
+    for i := 0 to AProc.Parameters.Count - 1 do
+    begin
+      LParameter := TVarDeclaration(AProc.Parameters[i]);
+      Result := Result + LParameter.Name + ': ' + LParameter.DataType.Name;
+      if i < AProc.Parameters.Count - 1 then
+      begin
+        Result := Result + '; ';
+      end;
+    end;
+  end;
+  Result := Result + ')';
+  if AProc.IsFunction then
+  begin
+    Result := Result + ': ' + AProc.ResultType.Name;
+  end;
 end;
 
 constructor TCodeTreeController.Create(ATree: TVirtualStringTree);
