@@ -24,6 +24,7 @@ type
     dlgFindReplace: TJvFindReplace;
     IDEImages: TImageList;
     CodeTreeImages: TImageList;
+    LogImages: TImageList;
   private
     { Private declarations }
   public

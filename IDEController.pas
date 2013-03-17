@@ -715,6 +715,7 @@ begin
   FIDEData := Value;
   FProjectTreeController.Images := FIDEData.TreeImages;
   FCodeTreeController.Images := FIDEData.CodeTreeImages;
+  FLog.Images := FIDEData.LogImages;
 end;
 
 procedure TIDEController.StepOver;
