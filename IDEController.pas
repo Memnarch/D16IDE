@@ -302,7 +302,6 @@ begin
   FDebugger := TDebugger.Create();
   FPeekCompiler := TCompiler.Create();
   FPeekCompiler.PeekMode := True;
-  FPeekCompiler.OnMessage := HandleCompileMessage;
   ACodeTree.NodeDataSize := SizeOf(TCodeNodeData);
   FProjectTreeController := TProjectTreeController.Create(AProjectTree);
   FCodeTreeController := TCodeTreeController.Create(ACodeTree);
