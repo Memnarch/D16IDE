@@ -3,10 +3,10 @@ unit IDEController;
 interface
 
 uses
-  Classes, Types, Windows, Forms, SysUtils, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
+  Classes, Types, Windows, Forms, SysUtils, Generics.Collections, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
   ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping,
-  RoutineMapping;
+  RoutineMapping, CodeElement;
 
 type
   TControllerState = (csStopped, csRunning, csPaused);
@@ -43,6 +43,7 @@ type
     procedure HandleOnRun();
     procedure HandleOnPause();
     procedure DoOnChange(AState: TControllerState);
+    procedure BuildCompletionListForElements(ACompletion, AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean);
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -96,7 +97,7 @@ type
 implementation
 
 uses
-  DateUtils, IDETabSheet, PascalUnit, CodeElement, DataType, VarDeclaration, ProcDeclaration,
+  DateUtils, IDETabSheet, PascalUnit, DataType, VarDeclaration, ProcDeclaration,
   CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls, UnitTemplates, UnitMapping;
 
 { TIDEController }
@@ -148,11 +149,61 @@ begin
   FokusIDEPageByUnit(LUnit);
 end;
 
+procedure TIDEController.BuildCompletionListForElements(ACompletion,
+  AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean);
+var
+  LElement, LParam: TCodeElement;
+  LType, LCat, LIdentifier: string;
+begin
+  for LElement in AElements do
+  begin
+    LType := '';
+    LCat := '';
+    LIdentifier := LElement.Name;
+    if LElement is TDataType then
+    begin
+      LCat := 'type';
+    end
+    else
+    begin
+      if LElement is TVarDeclaration then
+      begin
+        LCat := 'var';
+        LType := ': ' + TVarDeclaration(LElement).DataType.Name;
+      end
+      else
+      begin
+        if (LElement is TProcDeclaration) and (not (TProcDeclaration(LElement).IsDummy and AIgnoreDummyProcs)) then
+        begin
+          LCat := 'proc';
+          LType :=  '(';
+          for LParam in TProcDeclaration(LElement).Parameters do
+          begin
+            if Length(LType) > 1 then
+            begin
+              LType := LType + '; ';
+            end;
+            LType := LType + LParam.Name + ': ' + TVarDeclaration(LParam).DataType.Name;
+          end;
+          LType := LType + ')';
+          if TProcDeclaration(LElement).IsFunction then
+          begin
+            LType := LType + ': ' + TProcDeclaration(LElement).ResultType.Name;
+          end;
+        end;
+      end;
+    end;
+    if LCat <> '' then
+    begin
+      ACompletion.Add(FormatCompletPropString(LCat, LIdentifier, LType));
+      AInsert.Add(LElement.Name);
+    end;
+  end;
+end;
+
 procedure TIDEController.BuildCompletionLists(ACompletion, AInsert: TStrings);
 var
   LUnit, LActiveUnit: TPascalUnit;
-  LElement, LParam: TCodeElement;
-  LType, LCat, LIdentifier: string;
   LUnitName: string;
 begin
   ACompletion.Clear;
@@ -169,40 +220,11 @@ begin
     begin
       Continue;
     end;
-    for LElement in LUnit.SubElements do
+    if LUnit = LActiveUnit then
     begin
-      LType := '';
-      LIdentifier := LElement.Name;
-      if LElement is TDataType then
-      begin
-        LCat := 'type';
-      end;
-      if LElement is TVarDeclaration then
-      begin
-        LCat := 'var';
-        LType := ': ' + TVarDeclaration(LElement).DataType.Name;
-      end;
-      if LElement is TProcDeclaration then
-      begin
-        LCat := 'proc';
-        LType :=  '(';
-        for LParam in TProcDeclaration(LElement).Parameters do
-        begin
-          if Length(LType) > 1 then
-          begin
-            LType := LType + '; ';
-          end;
-          LType := LType + LParam.Name + ': ' + TVarDeclaration(LParam).DataType.Name;
-        end;
-        LType := LType + ')';
-        if TProcDeclaration(LElement).IsFunction then
-        begin
-          LType := LType + ': ' + TProcDeclaration(LElement).ResultType.Name;
-        end;
-      end;
-      ACompletion.Add(FormatCompletPropString(LCat, LIdentifier, LType));
-      AInsert.Add(LElement.Name);
+      BuildCompletionListForElements(ACompletion, AInsert, LUnit.ImplementationSection, False);
     end;
+    BuildCompletionListForElements(ACompletion, AInsert, LUnit.SubElements, LUnit = LActiveUnit);
   end;
 end;
 
@@ -280,6 +302,7 @@ begin
   FDebugger := TDebugger.Create();
   FPeekCompiler := TCompiler.Create();
   FPeekCompiler.PeekMode := True;
+  FPeekCompiler.OnMessage := HandleCompileMessage;
   ACodeTree.NodeDataSize := SizeOf(TCodeNodeData);
   FProjectTreeController := TProjectTreeController.Create(AProjectTree);
   FCodeTreeController := TCodeTreeController.Create(ACodeTree);
@@ -384,7 +407,7 @@ begin
     if AUnit = TIDETabSheet(FPageControl.Pages[i]).IDEPage.IDEUnit then
     begin
       FPageControl.ActivePageIndex := i;
-      PeekCompile();
+      PageControlChange(FPageControl);
       Break;
     end;
   end;
