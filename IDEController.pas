@@ -6,7 +6,7 @@ uses
   Classes, Types, Windows, Forms, SysUtils, Generics.Collections, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
   ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping,
-  RoutineMapping, CodeElement;
+  RoutineMapping, CodeElement, LogTreeController;
 
 type
   TControllerState = (csStopped, csRunning, csPaused);
@@ -27,7 +27,7 @@ type
     FProjectTreeController: TProjectTreeController;
     FCodeTreeController: TCodeTreeController;
     FErrors: Cardinal;
-    FLog: TStrings;
+    FLog: TLogTreeController;
     FDebugger: TDebugger;
     FIDEData: TIDEData;
     FOnChange: TStateChangeEvent;
@@ -48,7 +48,7 @@ type
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
       ACPUView: TCPUView; AWatchView: TWatchView;
-      ALog: TStrings; ACompletionProposal: TSynCompletionProposal); reintroduce;
+      ALogTree: TVirtualStringTree; ACompletionProposal: TSynCompletionProposal); reintroduce;
     destructor Destroy(); override;
 
     function SaveUnit(AUnit: TIDEUnit): Boolean;
@@ -310,7 +310,7 @@ begin
   FWatchView := AWatchView;
   FWatchView.Debugger := FDebugger;
   FSynCompletionProposal := ACompletionProposal;
-  FLog := ALog;
+  FLog := TLogTreeController.Create(ALogTree);
   FLastPeek := Now();
   FID := 1;
 end;
@@ -465,13 +465,9 @@ end;
 procedure TIDEController.HandleCompileMessage(AMessage, AUnitName: string;
   ALine: Integer; ALevel: TMessageLevel);
 begin
-  if ALevel = mlNone then
+  FLog.Add(AMessage, AUnitName, ALine, ALevel);
+  if ALevel <> mlNone then
   begin
-    FLog.Add(AMessage);
-  end
-  else
-  begin
-    FLog.Add('Error in ' + AUnitName + ' line ' + IntToSTr(ALine) + ': ' + AMessage);
     Inc(FErrors);
   end;
 end;
@@ -490,7 +486,7 @@ end;
 
 procedure TIDEController.HandleEmuMessage(AMessage: string);
 begin
-  FLog.Add('Emulator: ' + AMessage);
+  FLog.Add('Emulator: ' + AMessage, '', -1, mlNone);
 end;
 
 procedure TIDEController.HandleOnDebugStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);

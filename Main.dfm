@@ -111,29 +111,27 @@ object MainForm: TMainForm
     BevelOuter = bvNone
     Caption = 'Panel1'
     TabOrder = 2
-    object Log: TSynMemo
+    object LogTree: TVirtualStringTree
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 1178
       Height = 122
       Align = alClient
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -13
-      Font.Name = 'Courier New'
-      Font.Style = []
+      Header.AutoSizeIndex = 0
+      Header.DefaultHeight = 17
+      Header.Font.Charset = DEFAULT_CHARSET
+      Header.Font.Color = clWindowText
+      Header.Font.Height = -11
+      Header.Font.Name = 'Tahoma'
+      Header.Font.Style = []
+      Header.MainColumn = -1
       TabOrder = 0
-      Gutter.Font.Charset = DEFAULT_CHARSET
-      Gutter.Font.Color = clWindowText
-      Gutter.Font.Height = -11
-      Gutter.Font.Name = 'Courier New'
-      Gutter.Font.Style = []
-      Options = [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey, eoGroupUndo, eoNoCaret, eoScrollPastEol, eoShowScrollHint, eoSmartTabDelete, eoSmartTabs, eoTabsToSpaces]
-      ReadOnly = True
-      RightEdgeColor = clWhite
-      ScrollBars = ssVertical
-      FontSmoothing = fsmNone
+      ExplicitLeft = 496
+      ExplicitTop = 16
+      ExplicitWidth = 200
+      ExplicitHeight = 100
+      Columns = <>
     end
   end
   object PageControl: TJvPageControl

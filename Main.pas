@@ -24,7 +24,6 @@ type
     ProjectTree: TVirtualStringTree;
     Panel1: TPanel;
     Splitter1: TSplitter;
-    Log: TSynMemo;
     Edit1: TMenuItem;
     Search1: TMenuItem;
     Project1: TMenuItem;
@@ -75,6 +74,7 @@ type
     tbSearch: TToolBar;
     ToolButton4: TToolButton;
     ToolButton5: TToolButton;
+    LogTree: TVirtualStringTree;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeDblClick(Sender: TObject);
     procedure ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
@@ -201,7 +201,7 @@ begin
   FIDEData := TIDEData.Create(Self);
   FIDEActions := TIDEActions.Create(Self);
   FController := TIDEController.Create(Self, PageControl, ProjectTree, CodeTree, FCPUView, FWatchView,
-    Log.Lines, SynCompletionProposal);
+    LogTree, SynCompletionProposal);
   FIDEActions.Controller := FController;
   FIDEActions.IDEData := FIDEData;
   FController.IDEData := FIDEData;

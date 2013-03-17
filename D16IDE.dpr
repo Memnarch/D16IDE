@@ -27,7 +27,8 @@ uses
   UnitMapping in 'UnitMapping.pas',
   BreakPoint in 'BreakPoint.pas',
   ColorFunctions in 'ColorFunctions.pas',
-  AboutDialogForm in 'AboutDialogForm.pas' {AboutDialog};
+  AboutDialogForm in 'AboutDialogForm.pas' {AboutDialog},
+  LogTreeController in 'LogTreeController.pas';
 
 {$R *.res}
 
