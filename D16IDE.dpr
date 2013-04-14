@@ -35,6 +35,7 @@ uses
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  Application.Title := 'D16Pascal IDE';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
