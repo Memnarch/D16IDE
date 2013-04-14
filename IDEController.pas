@@ -55,7 +55,7 @@ type
     function GetTabIndexBelowCursor(): Integer;
     function SaveProject(AProject: TProject): Boolean;
     procedure AddPage(ATitle: string; AFile: string = ''; AUnit: TIDEUnit = nil);
-    procedure ClosePage(AIndex: Integer);
+    function ClosePage(AIndex: Integer): Boolean;
     procedure CreateNewProject(ATitle: string; AProjectFolder: string);
     procedure ClearProjects();
     procedure OpenProject(AFile: string);
@@ -68,6 +68,7 @@ type
     procedure HandleCPUViewClose(Sender: TObject; var Action: TCloseAction);
     procedure HandleEmuMessage(AMessage: string);
     function IDEUnitIsOpen(AUnit: TIDEUnit): Boolean;
+    function GetPageIndexForIdeUnit(AUnit: TIDEUnit): Integer;
     procedure FokusIDEPageByUnit(AUnit: TIDEUnit);
     procedure FokusIDEEdit(AUnitName: string; ADebugCursor: Integer = -1; AErrorCursor: Integer = -1);
     procedure FokusFirstError();
@@ -88,6 +89,7 @@ type
     procedure TraceInto();
     procedure StepOver();
     procedure RunUntilReturn();
+    procedure RemoveSelectedUnitFromProject();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
@@ -246,10 +248,11 @@ begin
   end;
 end;
 
-procedure TIDEController.ClosePage(AIndex: Integer);
+function TIDEController.ClosePage(AIndex: Integer): Boolean;
 var
   LPage: TIDETabSheet;
 begin
+  Result := False;
   LPage := TIDETabSheet(FPageControl.Pages[AIndex]);
   if not SaveUnit(LPage.IDEPage.IDEUnit) then
   begin
@@ -266,6 +269,7 @@ begin
   LPage.IDEPage.IDEUnit.SourceLink := nil;
   LPage.IDEPage.IDEUnit.OnRename := nil;
   LPage.Free;
+  Result := True;
 end;
 
 procedure TIDEController.Compile;
@@ -449,6 +453,21 @@ begin
   Result := Assigned(FEmulator);
 end;
 
+function TIDEController.GetPageIndexForIdeUnit(AUnit: TIDEUnit): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := 0 to FPageControl.PageCount - 1 do
+  begin
+    if AUnit = TIDETabSheet(FPageControl.Pages[i]).IDEPage.IDEUnit then
+    begin
+      Result := i;
+      Break;
+    end;
+  end;
+end;
+
 function TIDEController.GetTabIndexBelowCursor: Integer;
 var
   i: Integer;
@@ -626,6 +645,22 @@ begin
   end;
 end;
 
+procedure TIDEController.RemoveSelectedUnitFromProject;
+var
+  LItem: TObject;
+  LIndex: Integer;
+begin
+  LItem := FProjectTreeController.GetSelectedItem();
+  if LItem is TIDEUnit then
+  begin
+    LIndex := GetPageIndexForIdeUnit(TIDEUnit(LItem));
+    if (LIndex = -1) or ClosePage(LIndex)  then
+    begin
+      FProject.Units.Remove(TIDEUnit(LItem));
+    end;
+  end;
+end;
+
 procedure TIDEController.ResetAllDebugCursors;
 var
   LTab: TIDETabSheet;
@@ -785,3 +820,4 @@ begin
 end;
 
 end.
+

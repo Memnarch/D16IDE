@@ -31,6 +31,7 @@ type
     procedure SetImages(const Value: TImageList);
   public
     constructor Create(ATree: TVirtualStringTree);
+    function GetSelectedItem(): TObject;
     property Project: TProject read FProject write SetProject;
     property Images: TImageList read FImages write SetImages;
   end;
@@ -45,6 +46,22 @@ begin
   FTree.OnGetText := ProjectTreeGetText;
   FTree.OnGetImageIndex := ProjectTreeGetImageIndex;
   FTree.TreeOptions.MiscOptions := FTree.TreeOptions.MiscOptions - [toToggleOnDblClick];
+end;
+
+function TProjectTreeController.GetSelectedItem: TObject;
+var
+  LNodes: TNodeArray;
+  LData: PProjectNodeData;
+begin
+  LNodes := FTree.GetSortedSelection(false);
+  if Length(LNodes) = 1 then
+  begin
+    LData := FTree.GetNodeData(LNodes[0]);
+    if Assigned(LData) then
+    begin
+      Result := LData.Item;
+    end;
+  end;
 end;
 
 procedure TProjectTreeController.HandleUnitsChanged(Sender: TObject;

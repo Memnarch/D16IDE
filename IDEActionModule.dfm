@@ -158,5 +158,9 @@ object IDEActions: TIDEActions
       Caption = 'About'
       OnExecute = actAboutExecute
     end
+    object actRemoveUnitFromProject: TAction
+      Caption = 'Remove Unit'
+      OnExecute = actRemoveUnitFromProjectExecute
+    end
   end
 end

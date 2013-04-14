@@ -277,7 +277,7 @@ begin
   begin
     if Assigned(LNode) then
     begin
-      ProjectTree.PopupMenu := FIDEData.ProjectPopUp;//for now we use the same popup, will be changed later
+      ProjectTree.PopupMenu := FIDEData.UnitPopup;
     end
     else
     begin

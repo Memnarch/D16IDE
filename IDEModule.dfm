@@ -1012,7 +1012,7 @@ object IDEData: TIDEData
       Caption = 'Close'
     end
   end
-  object ProjectPopup: TPopupMenu
+  object UnitPopup: TPopupMenu
     Left = 32
     Top = 176
     object NewUnit1: TMenuItem
@@ -1020,6 +1020,9 @@ object IDEData: TIDEData
     end
     object AddUnit1: TMenuItem
       Caption = 'Add Existing Unit'
+    end
+    object RemoveUnit1: TMenuItem
+      Caption = 'Remove Unit'
     end
     object Options2: TMenuItem
       Caption = 'Options'
@@ -2265,5 +2268,18 @@ object IDEData: TIDEData
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
+  end
+  object ProjectPopup: TPopupMenu
+    Left = 32
+    Top = 232
+    object NewUnit2: TMenuItem
+      Caption = 'New Unit'
+    end
+    object AddUnit2: TMenuItem
+      Caption = 'Add Existing Unit'
+    end
+    object Options3: TMenuItem
+      Caption = 'Options'
+    end
   end
 end
