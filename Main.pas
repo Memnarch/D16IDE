@@ -88,6 +88,7 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure PageControlContextPopup(Sender: TObject;
   MousePos: TPoint; var Handled: Boolean);
+    procedure LogTreeDblClick(Sender: TObject);
   private
     { Private declarations }
     FCpuView: TCPUView;
@@ -108,7 +109,8 @@ var
 implementation
 
 uses
- CompilerUtil, ProjectOptionDialog, DateUtils, CodeElement, VarDeclaration, ProcDeclaration, DataType;
+ CompilerUtil, ProjectOptionDialog, DateUtils, CodeElement,
+ VarDeclaration, ProcDeclaration, DataType, LogTreeController;
 
 {$R *.dfm}
 
@@ -235,6 +237,30 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ProjectTree.NodeDataSize := SizeOf(Cardinal);
   FController.CreateNewProject('Project1', '');
+end;
+
+procedure TMainForm.LogTreeDblClick(Sender: TObject);
+var
+  LPos: TPoint;
+  LNode: PVirtualNode;
+  LData: PLogEntry;
+begin
+  if GetCursorPos(LPos) then
+  begin
+    LPos := LogTree.ScreenToClient(LPos);
+    LNode := LogTree.GetNodeAt(LPos.X, LPos.Y);
+    if Assigned(LNode) then
+    begin
+      LData := LogTree.GetNodeData(LNode);
+      if Assigned(LData) then
+      begin
+        if LData.Line > -1 then
+        begin
+          FController.FokusIDEEdit(LData.UnitName, -1, LData.Line);
+        end;
+      end;
+    end;
+  end;
 end;
 
 procedure TMainForm.ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;

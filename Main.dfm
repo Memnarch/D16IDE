@@ -127,10 +127,7 @@ object MainForm: TMainForm
       Header.Font.Style = []
       Header.MainColumn = -1
       TabOrder = 0
-      ExplicitLeft = 496
-      ExplicitTop = 16
-      ExplicitWidth = 200
-      ExplicitHeight = 100
+      OnDblClick = LogTreeDblClick
       Columns = <>
     end
   end
