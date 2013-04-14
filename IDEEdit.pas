@@ -23,6 +23,8 @@ type
     FBreakPointColor: TColor;
     FDebugCursor: Integer;
     FDebugCursorColor: TColor;
+    FErrorCursor: Integer;
+    FErrorCursorColor: TColor;
     procedure InternalKeyPress(Sender: TObject; var Key: Char);
     procedure HandleLineDelete(Sender: TObject; Index, Count: Integer);
     procedure HandleLineInserted(Sender: TObject; Index, Count: Integer);
@@ -38,6 +40,7 @@ type
     procedure ShiftBreakpoints(AFrom: Integer; AOffset: Integer);
     procedure InitColors();
     procedure SetDebugCursor(const Value: Integer);
+    procedure SetErrorCursor(const Value: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy(); override;
@@ -50,7 +53,9 @@ type
     property Refactor: TSimpleRefactor read FRefactor;
     property BreakPointColor: TColor read FBreakPointColor write FBreakPointColor;
     property DebugCursorColor: TColor read FDebugCursorColor write FDebugCursorColor;
+    property ErrorCursorColor: TColor read FErrorCursorColor write FErrorCursorColor;
     property DebugCursor: Integer read FDebugCursor write SetDebugCursor;
+    property ErrorCursor: Integer read FErrorCursor write SetErrorCursor;
     property OnAddBreakPoint: TBreakPointEvent read FOnAddBreakPoint write FOnAddBreakPoint;
     property OnDeleteBreakPoint: TBreakPointEvent read FOnDeleteBreakPoint write FOnDeleteBreakPoint;
   end;
@@ -96,6 +101,7 @@ begin
   OnGutterClick := HandleGutterClick;
   OnSpecialLineColors := HandleSpecialLineColors;
   FDebugCursor := -1;
+  FErrorCursor := -1;
   InitColors();
 end;
 
@@ -226,6 +232,8 @@ begin
   begin
     FLineInfo.Items[i].State := ltModified;
   end;
+  //in case we have an errorcursor, remove it on changing
+  FErrorCursor := -1;
 end;
 
 procedure TIDEEdit.HandleSpecialLineColors(Sender: TObject; Line: Integer;
@@ -244,6 +252,15 @@ begin
       FG := clNone;
       BG := DebugCursorColor;
       Special := True;
+    end
+    else
+    begin
+      if ErrorCursor = Line then
+      begin
+        FG := clNone;
+        BG := ErrorCursorColor;
+        Special := True;
+      end;
     end;
   end;
 end;
@@ -254,6 +271,7 @@ begin
   FBreakPointColor := HexToTColor('c7c7ff');
   ActiveLineColor := HexToTColor('F0F0F0');//HexToTColor('D6D6D6');
   DebugCursorColor := HexToTColor('cc9999');
+  ErrorCursorColor := clRed;
 end;
 
 procedure TIDEEdit.InterceptBuffer;
@@ -305,6 +323,16 @@ procedure TIDEEdit.SetDebugCursor(const Value: Integer);
 begin
   FDebugCursor := Value;
   if FDebugCursor > -1 then
+  begin
+    CaretY := Value;
+  end;
+  Repaint();
+end;
+
+procedure TIDEEdit.SetErrorCursor(const Value: Integer);
+begin
+  FErrorCursor := Value;
+  if FErrorCursor > -1 then
   begin
     CaretY := Value;
   end;
