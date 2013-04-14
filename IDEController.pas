@@ -70,6 +70,7 @@ type
     function IDEUnitIsOpen(AUnit: TIDEUnit): Boolean;
     procedure FokusIDEPageByUnit(AUnit: TIDEUnit);
     procedure FokusIDEEdit(AUnitName: string; ADebugCursor: Integer = -1; AErrorCursor: Integer = -1);
+    procedure FokusFirstError();
     procedure NewUnit();
     procedure Compile();
     procedure PeekCompile();
@@ -281,6 +282,7 @@ begin
     FDebugger.LoadMappingFromFile(LFileName);
     UpdateAllMappings();
   end;
+  FokusFirstError();
 end;
 
 procedure TIDEController.Copy;
@@ -377,6 +379,17 @@ begin
   end;
 end;
 
+procedure TIDEController.FokusFirstError;
+var
+  LData: TLogEntry;
+begin
+  LData := FLog.GetFirstError();
+  if LData.Line > -1 then
+  begin
+    FokusIDEEdit(LData.UnitName, -1, LData.Line);
+  end;
+end;
+
 procedure TIDEController.FokusIDEEdit(AUnitName: string; ADebugCursor,
   AErrorCursor: Integer);
 var
@@ -394,6 +407,7 @@ begin
       AddPage(LUnit.Caption, '', LUnit);
     end;
     GetActiveIDEPage().IDEEdit.DebugCursor := ADebugCursor;
+    GetActiveIDEPage().IDEEdit.ErrorCursor := AErrorCursor;
   end;
 end;
 

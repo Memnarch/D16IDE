@@ -30,6 +30,7 @@ type
     destructor Destroy(); override;
     procedure Clear();
     procedure Add(AMessage: string; AUnitName: string = ''; ALine: Integer = -1; AEntryType: TMessageLevel = mlNone);
+    function GetFirstError(): TLogEntry;
     property Images: TImageList read GetImages write SetImages;
   end;
 
@@ -69,6 +70,24 @@ end;
 destructor TLogTreeController.Destroy;
 begin
   inherited;
+end;
+
+function TLogTreeController.GetFirstError: TLogEntry;
+var
+  LNode: PVirtualNode;
+  LData: PLogEntry;
+begin
+  Result.Line := -1;
+  LNode := FTree.GetFirst();
+  while Assigned(LNode) do
+  begin
+    LData := FTree.GetNodeData(LNode);
+    if Assigned(LData) and (LData.Line > -1) and (LData.EntryType in [mlError, mlFatal]) then
+    begin
+      Result := LData^;
+    end;
+    LNode := FTree.GetNextSibling(LNode);
+  end;
 end;
 
 function TLogTreeController.GetImages: TImageList;
