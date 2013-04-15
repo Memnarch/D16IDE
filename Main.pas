@@ -75,6 +75,7 @@ type
     ToolButton4: TToolButton;
     ToolButton5: TToolButton;
     LogTree: TVirtualStringTree;
+    btnCheckUpdates: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure ProjectTreeDblClick(Sender: TObject);
     procedure ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
@@ -221,14 +222,21 @@ begin
   begin
     FController.Stop();
   end;
-  FIDEActions.actSaveAll.Execute();
-  CanClose := Boolean(FIDEActions.actSaveAll.Tag);
-  if not CanClose then
+  if FIDEActions.DontAskForSavingOnExit then
   begin
-    if MessageDlg('There are unsaved changes. Exit without saving?', TMsgDlgType.mtWarning,
-      [mbYes, mbNo], 0) = mrYes then
+    CanClose := True;
+  end
+  else
+  begin
+    FIDEActions.actSaveAll.Execute();
+    CanClose := Boolean(FIDEActions.actSaveAll.Tag);
+    if not CanClose then
     begin
-      CanClose := True;
+      if MessageDlg('There are unsaved changes. Exit without saving?', TMsgDlgType.mtWarning,
+        [mbYes, mbNo], 0) = mrYes then
+      begin
+        CanClose := True;
+      end;
     end;
   end;
 end;

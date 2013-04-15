@@ -28,7 +28,9 @@ uses
   BreakPoint in 'BreakPoint.pas',
   ColorFunctions in 'ColorFunctions.pas',
   AboutDialogForm in 'AboutDialogForm.pas' {AboutDialog},
-  LogTreeController in 'LogTreeController.pas';
+  LogTreeController in 'LogTreeController.pas',
+  IDEVersion in 'IDEVersion.pas',
+  PatchInfoLoader in 'PatchInfoLoader.pas';
 
 {$R *.res}
 

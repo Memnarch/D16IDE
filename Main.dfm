@@ -376,6 +376,9 @@ object MainForm: TMainForm
     end
     object Help1: TMenuItem
       Caption = 'Help'
+      object btnCheckUpdates: TMenuItem
+        Action = IDEActions.actCheckForUpdates
+      end
       object About1: TMenuItem
         Action = IDEActions.actAbout
       end

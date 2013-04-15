@@ -3,7 +3,8 @@ unit IDEActionModule;
 interface
 
 uses
-  SysUtils, Classes, Dialogs, ImgList, Controls, ActnList, IDEController, IDEModule, Menus;
+  Windows, SysUtils, Forms, Classes, Dialogs, ImgList, Controls, ActnList, IDEController, IDEModule, Menus,
+  UpdateInfo;
 
 type
   TIDEActions = class(TDataModule)
@@ -38,6 +39,7 @@ type
     actFindPrevious: TAction;
     actAbout: TAction;
     actRemoveUnitFromProject: TAction;
+    actCheckForUpdates: TAction;
     procedure actNewUnitExecute(Sender: TObject);
     procedure actCloseUnitByTabExecute(Sender: TObject);
     procedure actSaveActiveExecute(Sender: TObject);
@@ -68,23 +70,31 @@ type
     procedure actStepUntilReturnExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure actRemoveUnitFromProjectExecute(Sender: TObject);
+    procedure actCheckForUpdatesExecute(Sender: TObject);
   private
     FController: TIDEController;
     FIDEData: TIDEData;
+    FDontAskForSavingOnExit: boolean;
     procedure SetIDEData(const Value: TIDEData);
     procedure HandleStateChange(AState: TControllerState);
     procedure SetController(const Value: TIDEController);
     { Private declarations }
+    function IsUpdateRequired(AInfo: TUpdateInfo): Boolean;
+    procedure RunPatcher(AUpdateFile: string);
   public
     { Public declarations }
+    constructor Create(AOwner: TComponent); override;
     property Controller: TIDEController read FController write SetController;
     property IDEData: TIDEData read FIDEData write SetIDEData;
+    property DontAskForSavingOnExit: boolean read FDontAskForSavingOnExit write FDontAskForSavingOnExit;
   end;
 
 implementation
 
 uses
-  PascalUnit, ProjectOptionDialog, IDEPageFrame, IDEUnit, ABoutDialogForm;
+  PascalUnit, ProjectOptionDialog, IDEPageFrame, IDEUnit, ABoutDialogForm,
+  PatchInfoLoader, VersionCompare, StrUtils, IDEVersion, CompilerVersion,
+  EmulatorVersion, PatcherVersion, Process, CommandoSettings, ShellAPI;
 
 {$R *.dfm}
 
@@ -107,6 +117,45 @@ begin
   if FIDEData.OpenUnitDialog.Execute then
   begin
     FController.AddPage(ExtractFileName(FIDEData.OpenUnitDialog.FileName), FIDEData.OpenUnitDialog.FileName);
+  end;
+end;
+
+procedure TIDEActions.actCheckForUpdatesExecute(Sender: TObject);
+var
+  LLoader: TPatchInfoLoader;
+  LInfoFile: string;
+  LUpdateInfo: TUpdateInfo;
+begin
+  LLoader := TPatchInfoLoader.Create();
+  try
+    LInfoFile := IncludeTrailingBackslash(ExtractFilePath(ParamStr(0))) + 'updates.info';
+    if LLoader.DownloadInfoFile(LInfoFile) then
+    begin
+      LUpdateInfo := TUpdateInfo.Create();
+      try
+        LUpdateInfo.LoadFromFile(LInfoFile);
+        if IsUpdateRequired(LUpdateInfo) then
+        begin
+          if MessageDlg('One or more updates are available. Update now?', mtInformation, mbYesNo, 0) = mrYes
+          then
+          begin
+            RunPatcher(LInfoFile);
+          end;
+        end
+        else
+        begin
+          MessageDlg('No updates available', mtInformation, [mbOK], 0);
+        end;
+      finally
+        LUpdateInfo.Free;
+      end;
+    end
+    else
+    begin
+      MessageDlg('Could not download updateinfos', mtError, [mbOK], 0);
+    end;
+  finally
+    LLoader.Free;
   end;
 end;
 
@@ -138,7 +187,7 @@ end;
 
 procedure TIDEActions.actExitExecute(Sender: TObject);
 begin
-  //Self.Close;
+  Application.MainForm.Close();
 end;
 
 procedure TIDEActions.actFindExecute(Sender: TObject);
@@ -306,6 +355,12 @@ begin
   FController.Undo;
 end;
 
+constructor TIDEActions.Create(AOwner: TComponent);
+begin
+  inherited;
+  FDontAskForSavingOnExit := False;
+end;
+
 procedure TIDEActions.DataModuleCreate(Sender: TObject);
 begin
   actSaveAll.ShortCut := ShortCut(Ord('S'), [ssCtrl, ssShift]);
@@ -319,6 +374,82 @@ begin
   actStep.Enabled := AState = csPaused;
   actStepOver.Enabled := AState = csPaused;
   actStepUntilReturn.Enabled := AState = csPaused;
+end;
+
+function TIDEActions.IsUpdateRequired(AInfo: TUpdateInfo): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to AInfo.Components.Count - 1 do
+  begin
+    case AnsiIndexText(AInfo.Components[i], [CIDEName, CCompilerName, CEmulatorName]) of
+      0:
+      begin
+        if NeedsUpdate(CIDEVersion, AInfo.Versions[i]) then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+      1:
+      begin
+        if NeedsUpdate(CCompilerVersion, AInfo.Versions[i]) then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+      2:
+      begin
+        if NeedsUpdate(CEmulatorVersion, AInfo.Versions[i]) then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+
+      else
+      begin
+        if not SameText(AInfo.Components[i], CPatcherName) then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TIDEActions.RunPatcher;
+var
+  LSettings: TCommandoSettings;
+  LLine: string;
+begin
+  actSaveAll.Execute();
+  if not Boolean(actSaveAll.Tag) then
+  begin
+    if MessageDlg('There are unsaved changes. Exit without saving?', TMsgDlgType.mtWarning,
+      [mbYes, mbNo], 0) = mrNo then
+    begin
+      Exit;
+    end;
+    FDontAskForSavingOnExit := True;
+  end;
+  LSettings := TCommandoSettings.Create();
+  try
+    LSettings.PID := GetCurrentProcessId();
+    LSettings.Components.Add(CIDEName + '=' + CIDEVersion);
+    LSettings.Components.Add(CCompilerName + '=' + CCompilerVersion);
+    LSettings.Components.Add(CEmulatorName + '=' + CEmulatorVersion);
+    LSettings.UpdateFile := ExtractFileName(AUpdateFile);
+    LLine := IncludeTrailingBackslash(ExtractFilePath(ParamStr(0))) + CPatcherName + '.exe ';
+    ShellExecute(0, 'open',
+      PChar(@LLine[1]), PChar(LSettings.CommandoLine), nil, SW_SHOWNORMAL);
+    actExit.Execute();
+  finally
+    LSettings.Free;
+  end;
 end;
 
 procedure TIDEActions.SetController(const Value: TIDEController);
