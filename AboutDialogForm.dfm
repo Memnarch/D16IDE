@@ -3,8 +3,8 @@ object AboutDialog: TAboutDialog
   Top = 0
   BorderStyle = bsDialog
   Caption = 'D16Pascal'
-  ClientHeight = 290
-  ClientWidth = 595
+  ClientHeight = 254
+  ClientWidth = 561
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -385,38 +385,12 @@ object AboutDialog: TAboutDialog
   object Label1: TLabel
     Left = 142
     Top = 8
-    Width = 445
-    Height = 29
-    Caption = 'D16Pascal-Developmentenvironment'
+    Width = 415
+    Height = 19
+    Caption = 'D16Pascal-IDE by Memnarch from 0x10cforum.com'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -24
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
-    ParentFont = False
-  end
-  object Label2: TLabel
-    Left = 352
-    Top = 43
-    Width = 30
-    Height = 29
-    Caption = 'By'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -24
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
-    ParentFont = False
-  end
-  object Label3: TLabel
-    Left = 168
-    Top = 88
-    Width = 400
-    Height = 29
-    Caption = 'Memnarch from 0x10cforum.com'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -24
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
@@ -424,45 +398,136 @@ object AboutDialog: TAboutDialog
   object Label4: TLabel
     Left = 8
     Top = 152
-    Width = 213
-    Height = 29
+    Width = 180
+    Height = 24
     Caption = 'Special thanks to:'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -24
+    Font.Height = -20
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object Label5: TLabel
     Left = 8
-    Top = 187
-    Width = 540
-    Height = 23
+    Top = 182
+    Width = 457
+    Height = 19
     Caption = 'Yusuke Kamiyamane for his awesome collection of icons'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -19
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object Label6: TLabel
     Left = 8
-    Top = 219
-    Width = 441
-    Height = 23
+    Top = 207
+    Width = 373
+    Height = 19
     Caption = 'Visit him on http://p.yusukekamiyamane.com'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -19
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object Label2: TLabel
+    Left = 142
+    Top = 58
+    Width = 75
+    Height = 19
+    Caption = 'Versions:'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object Label7: TLabel
+    Left = 142
+    Top = 83
+    Width = 35
+    Height = 19
+    Caption = 'IDE:'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object Label8: TLabel
+    Left = 142
+    Top = 100
+    Width = 79
+    Height = 19
+    Caption = 'Compiler:'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object Label9: TLabel
+    Left = 142
+    Top = 117
+    Width = 80
+    Height = 19
+    Caption = 'Emulator:'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object lbIDEVersion: TLabel
+    Left = 246
+    Top = 83
+    Width = 76
+    Height = 19
+    Caption = 'XX.XX.XX'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object lbCompilerVersion: TLabel
+    Left = 246
+    Top = 100
+    Width = 76
+    Height = 19
+    Caption = 'XX.XX.XX'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object lbEmulatorVersion: TLabel
+    Left = 246
+    Top = 117
+    Width = 76
+    Height = 19
+    Caption = 'XX.XX.XX'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object Button1: TButton
-    Left = 512
-    Top = 257
+    Left = 478
+    Top = 221
     Width = 75
     Height = 25
     Caption = 'Close'
