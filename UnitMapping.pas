@@ -9,6 +9,7 @@ type
   TUnitMapping = class
   private
     FD16UnitName: string;
+    FNullLine: TLineMapping;
     FMapping: TObjectList<TLineMapping>;
     FBreakPoints: TObjectList<TBreakPoint>;
   public
@@ -28,12 +29,14 @@ constructor TUnitMapping.Create;
 begin
   FMapping := TObjectList<TLineMapping>.Create();
   FBreakPoints := TObjectList<TBreakPoint>.Create();
+  FNullLine := TLineMapping.Create();
 end;
 
 destructor TUnitMapping.Destroy;
 begin
   FMapping.Free;
   FBreakPoints.Free;
+  FNullLine.Free;
   inherited;
 end;
 
@@ -41,7 +44,7 @@ function TUnitMapping.GetLineMappingByUnitLine(ALine: Integer): TLineMapping;
 var
   LLine: TLineMapping;
 begin
-  Result := nil;
+  Result := FNullLine;
   for LLine in FMapping do
   begin
     if LLine.UnitLine = ALine then

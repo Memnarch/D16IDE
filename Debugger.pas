@@ -75,11 +75,15 @@ begin
   LBreak := TBreakPoint.Create();
   try
     LBreak.UnitLine := AUnitLine;
-    LBreak.Memory := -1;
+    LBreak.Memory := GetUnitMapping(AUnit).GetLineMappingByUnitLine(AUnitLine).MemoryAddress;
     LBreak.State := bpsNormal;
     LBreak.D16UnitName := AUnit;
   finally
     GetUnitMapping(AUnit).BreakPoints.Add(LBreak);
+    if Assigned(FEmulator) then
+    begin
+      FEmulator.SetAlertPoint(LBreak.Memory, True);
+    end;
   end;
 end;
 
@@ -114,6 +118,10 @@ begin
   begin
     if LUnitMapping.BreakPoints.Items[i].UnitLine = AUnitLine then
     begin
+      if Assigned(FEmulator) then
+      begin
+        FEmulator.SetAlertPoint(LUnitMapping.BreakPoints[i].Memory, False);
+      end;
       LUnitMapping.BreakPoints.Delete(i);
       Break;
     end;
@@ -270,6 +278,7 @@ begin
   if (FMode <> smTraceInto) and (FMode <> smStepOver) then
   begin
     FEmulator.OnStep := nil;
+    FLastLine := -1;
   end;
   if FCallStack.Count > 0 then
   begin
@@ -279,7 +288,6 @@ begin
   begin
     FRoutineMapping := nil;
   end;
-  FLastLine := -1;
 end;
 
 procedure TDebugger.HandleOnStep;
