@@ -110,38 +110,38 @@ object IDEActions: TIDEActions
       OnExecute = actStepUntilReturnExecute
     end
     object actCopy: TAction
-      Caption = 'actCopy'
+      Caption = 'Copy'
       ImageIndex = 9
       OnExecute = actCopyExecute
     end
     object actCut: TAction
-      Caption = 'actCut'
+      Caption = 'Cut'
       ImageIndex = 10
       OnExecute = actCutExecute
     end
     object actPaste: TAction
-      Caption = 'actPaste'
+      Caption = 'Paste'
       ImageIndex = 11
       OnExecute = actPasteExecute
     end
     object actUndo: TAction
-      Caption = 'actUndo'
+      Caption = 'Undo'
       ImageIndex = 12
       OnExecute = actUndoExecute
     end
     object actRedo: TAction
-      Caption = 'actRedo'
+      Caption = 'Redo'
       ImageIndex = 13
       OnExecute = actRedoExecute
     end
     object actFind: TAction
-      Caption = 'actFind'
+      Caption = 'Find'
       ImageIndex = 14
       ShortCut = 16454
       OnExecute = actFindExecute
     end
     object actReplace: TAction
-      Caption = 'actReplace'
+      Caption = 'Replace'
       ImageIndex = 15
     end
     object actFindNext: TAction

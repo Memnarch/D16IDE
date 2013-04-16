@@ -353,10 +353,10 @@ object MainForm: TMainForm
     object Search1: TMenuItem
       Caption = 'Search'
       object Find1: TMenuItem
-        Caption = 'Find'
+        Action = IDEActions.actFind
       end
       object Replace1: TMenuItem
-        Caption = 'Replace'
+        Action = IDEActions.actReplace
       end
     end
     object Project1: TMenuItem
