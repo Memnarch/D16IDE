@@ -43,7 +43,7 @@ type
     procedure HandleOnRun();
     procedure HandleOnPause();
     procedure DoOnChange(AState: TControllerState);
-    procedure BuildCompletionListForElements(ACompletion, AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean);
+    procedure BuildCompletionListForElements(ACompletion, AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean; ACaretY: Integer = -1);
   public
     constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
       AProjectTree, ACodeTree: TVirtualStringTree;
@@ -153,7 +153,7 @@ begin
 end;
 
 procedure TIDEController.BuildCompletionListForElements(ACompletion,
-  AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean);
+  AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean; ACaretY: Integer = -1);
 var
   LElement, LParam: TCodeElement;
   LType, LCat, LIdentifier: string;
@@ -200,6 +200,22 @@ begin
     begin
       ACompletion.Add(FormatCompletPropString(LCat, LIdentifier, LType));
       AInsert.Add(LElement.Name);
+      if LElement is TProcDeclaration then
+      begin
+        if (ACaretY >= TProcDeclaration(LElement).StartLine) and (ACaretY <= TProcDeclaration(LElement).EndLine) then
+        begin
+          for LParam in TProcDeclaration(LElement).Parameters do
+          begin
+            ACompletion.Add(FormatCompletPropString('param', LParam.Name, ': ' + TVarDeclaration(LParam).DataType.Name));
+            AInsert.Add(LParam.Name);
+          end;
+          for LParam in TProcDeclaration(LElement).Locals do
+          begin
+            ACompletion.Add(FormatCompletPropString('var', LParam.Name, ': ' + TVarDeclaration(LParam).DataType.Name));
+            AInsert.Add(LParam.Name);
+          end;
+        end;
+      end;
     end;
   end;
 end;
@@ -225,9 +241,13 @@ begin
     end;
     if LUnit = LActiveUnit then
     begin
-      BuildCompletionListForElements(ACompletion, AInsert, LUnit.ImplementationSection, False);
+      BuildCompletionListForElements(ACompletion, AInsert, LUnit.ImplementationSection, False, GetActiveIDEPage().IDEEdit.CaretY);
+      BuildCompletionListForElements(ACompletion, AInsert, LUnit.SubElements, True);
+    end
+    else
+    begin
+      BuildCompletionListForElements(ACompletion, AInsert, LUnit.SubElements, False);
     end;
-    BuildCompletionListForElements(ACompletion, AInsert, LUnit.SubElements, LUnit = LActiveUnit);
   end;
 end;
 
