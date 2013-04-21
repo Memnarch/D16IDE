@@ -7,7 +7,7 @@ uses
   Compiler, Emulator, IDEPageFrame, IDEModule,
   ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping,
   RoutineMapping, CodeElement, LogTreeController, IDELayout, IDEControllerIntf,
-  ProjectEvents, EventGroups, CurrentUnitEvents, PascalUnit;
+  ProjectEvents, EventGroups, CurrentUnitEvents, PascalUnit, CompilerEvents, EVents;
 
 type
   TControllerState = (csStopped, csRunning, csPaused);
@@ -29,8 +29,10 @@ type
     FIDEData: TIDEData;
     FOnChange: TStateChangeEvent;
   //EventData-Objects
+    FEvent: TEventData;
     FProjectEvent: TProjectEvenetData;
     FCurrentUnitEvent: TCurrentUnitEventData;
+    FCompilerMessageEvent: TCompilerMessageEventData;
   //events
     procedure UpdateAllMappings();
     procedure PageControlChange(Sender: TObject);
@@ -47,6 +49,9 @@ type
   //event-triggers
     procedure ProjectChanged(AProject: TProject);
     procedure UnitCacheChanged(AUnit: TPascalUnit);
+    procedure CompilerMessage(AMessage, AUnitName: string; ALine: Integer; ALevel: TMessageLevel);
+    procedure CompileStart();
+    procedure CompileFinished();
   public
     constructor Create(AOwner: TForm; APageControl: TJvPageControl; ACompletionProposal: TSynCompletionProposal); reintroduce;
     destructor Destroy(); override;
@@ -65,13 +70,11 @@ type
     procedure BuildCompletionLists(ACompletion, AInsert: TStrings);
     function FormatCompletPropString(ACategory, AIdentifier, AType: string): string;
     function GetActiveIDEPage(): TIDEPage;
-    procedure HandleCPUViewClose(Sender: TObject; var Action: TCloseAction);
     procedure HandleEmuMessage(AMessage: string);
     function IDEUnitIsOpen(AUnit: TIDEUnit): Boolean;
     function GetPageIndexForIdeUnit(AUnit: TIDEUnit): Integer;
     procedure FokusIDEPageByUnit(AUnit: TIDEUnit);
     procedure FokusIDEEdit(AUnitName: string; ADebugCursor: Integer = -1; AErrorCursor: Integer = -1);
-    procedure FokusFirstError();
     procedure NewUnit();
     procedure Compile();
     procedure PeekCompile();
@@ -89,7 +92,6 @@ type
     procedure TraceInto();
     procedure StepOver();
     procedure RunUntilReturn();
-    procedure RemoveSelectedUnitFromProject();
     property Project: TProject read FProject;
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
@@ -297,7 +299,7 @@ procedure TIDEController.Compile;
 var
   LFileName: string;
 begin
-  //FLog.Clear;
+  CompileStart();
   FErrors := 0;
   CompileFile(FProject.ProjectUnit.FileName, FProject.Optimize, FProject.Assemble,
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
@@ -307,7 +309,30 @@ begin
     FDebugger.LoadMappingFromFile(LFileName);
     UpdateAllMappings();
   end;
-  FokusFirstError();
+  CompileFinished();
+end;
+
+procedure TIDEController.CompileFinished;
+begin
+  FEvent.EventID := evFinishCompiling;
+  FLayout.CallEvent(egCompiler, FEvent);
+end;
+
+procedure TIDEController.CompilerMessage(AMessage, AUnitName: string;
+  ALine: Integer; ALevel: TMessageLevel);
+begin
+  FCompilerMessageEvent.EventID := evCompilerMessage;
+  FCompilerMessageEvent.Message := AMessage;
+  FCompilerMessageEvent.D16UnitName := AUnitName;
+  FCompilerMessageEvent.Line := ALine;
+  FCompilerMessageEvent.Level := ALevel;
+  FLayout.CallEvent(egCompiler, FCompilerMessageEvent);
+end;
+
+procedure TIDEController.CompileStart;
+begin
+  FEvent.EventID := evStartCompiling;
+  FLayout.CallEvent(egCompiler, FEvent);
 end;
 
 procedure TIDEController.Copy;
@@ -335,8 +360,10 @@ begin
   FLastPeek := Now();
   FID := 1;
   //creating EventDataObjects
+  FEvent := TEventData.Create();
   FProjectEvent := TProjectEvenetData.Create();
   FCurrentUnitEvent := TCurrentUnitEventData.Create();
+  FCompilerMessageEvent := TCompilerMessageEventData.Create();
 end;
 
 procedure TIDEController.CreateNewProject(ATitle, AProjectFolder: string);
@@ -368,8 +395,10 @@ end;
 destructor TIDEController.Destroy;
 begin
   FDebugger.Free;
+  FEvent.Free;
   FCurrentUnitEvent.Free;
   FProjectEvent.Free;
+  FCompilerMessageEvent.Free;
   inherited;
 end;
 
@@ -401,17 +430,6 @@ begin
   begin
     LPage.FindPrevious();
   end;
-end;
-
-procedure TIDEController.FokusFirstError;
-var
-  LData: TLogEntry;
-begin
-//  LData := FLog.GetFirstError();
-//  if LData.Line > -1 then
-//  begin
-//    FokusIDEEdit(LData.UnitName, -1, LData.Line);
-//  end;
 end;
 
 procedure TIDEController.FokusIDEEdit(AUnitName: string; ADebugCursor,
@@ -518,18 +536,11 @@ end;
 procedure TIDEController.HandleCompileMessage(AMessage, AUnitName: string;
   ALine: Integer; ALevel: TMessageLevel);
 begin
-//  FLog.Add(AMessage, AUnitName, ALine, ALevel);
+  CompilerMessage(AMessage, AUnitName, ALine, ALevel);
   if ALevel <> mlNone then
   begin
     Inc(FErrors);
   end;
-end;
-
-procedure TIDEController.HandleCPUViewClose(Sender: TObject;
-  var Action: TCloseAction);
-begin
-  ACtion := caHide;
-//  FIDEData.actStopExecute(IDEData);
 end;
 
 procedure TIDEController.HandleDeleteBreakPoint(AUnit: string; ALine: Integer);
@@ -670,22 +681,6 @@ begin
   begin
     LPage.IDEEdit.Redo;
   end;
-end;
-
-procedure TIDEController.RemoveSelectedUnitFromProject;
-var
-  LItem: TObject;
-  LIndex: Integer;
-begin
-//  LItem := FProjectTreeController.GetSelectedItem();
-//  if LItem is TIDEUnit then
-//  begin
-//    LIndex := GetPageIndexForIdeUnit(TIDEUnit(LItem));
-//    if (LIndex = -1) or ClosePage(LIndex)  then
-//    begin
-//      FProject.Units.Remove(TIDEUnit(LItem));
-//    end;
-//  end;
 end;
 
 procedure TIDEController.ResetAllDebugCursors;

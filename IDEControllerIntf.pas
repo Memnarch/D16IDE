@@ -20,7 +20,6 @@ type
     function GetPageIndexForIdeUnit(AUnit: TIDEUnit): Integer;
     procedure FokusIDEPageByUnit(AUnit: TIDEUnit);
     procedure FokusIDEEdit(AUnitName: string; ADebugCursor: Integer = -1; AErrorCursor: Integer = -1);
-    procedure FokusFirstError();
     procedure NewUnit();
     procedure Compile();
     procedure PeekCompile();
