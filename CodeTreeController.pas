@@ -29,7 +29,10 @@ type
     function BuildParameterPostFix(AProc: TProcDeclaration): string;
     //event handlers
     procedure HandleGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-    var Ghosted: Boolean; var ImageIndex: Integer);
+      var Ghosted: Boolean; var ImageIndex: Integer);
+    procedure HandleCodeTreeGetText(Sender: TBaseVirtualTree;
+      Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+      var CellText: string);
     function GetImages: TImageList;
     procedure SetImages(const Value: TImageList);
   public
@@ -148,7 +151,9 @@ end;
 constructor TCodeTreeController.Create(ATree: TVirtualStringTree);
 begin
   FTree := ATree;
+  FTree.NodeDataSize := SizeOf(TCodeNodeData);
   FTree.OnGetImageIndex := HandleGetImageIndex;
+  FTree.OnGetText := HandleCodeTreeGetText;
 end;
 
 procedure TCodeTreeController.CreateSectionNodes;
@@ -174,6 +179,13 @@ end;
 function TCodeTreeController.GetImages: TImageList;
 begin
   Result := TImageList(FTree.Images);
+end;
+
+procedure TCodeTreeController.HandleCodeTreeGetText(Sender: TBaseVirtualTree;
+  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+  var CellText: string);
+begin
+  CellText := PCodeNodeData(Sender.GetNodeData(Node)).Caption;
 end;
 
 procedure TCodeTreeController.HandleGetImageIndex(Sender: TBaseVirtualTree;

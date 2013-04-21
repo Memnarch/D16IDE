@@ -6,31 +6,31 @@ uses
   Classes, Types, Windows, Forms, SysUtils, Generics.Collections, VirtualTrees, JvComCtrls, WatchViewForm, CPUViewForm, Project, CompilerDefines,
   Compiler, Emulator, IDEPageFrame, IDEModule,
   ProjectTreeController, CodeTreeController, IDEUnit, SynCompletionProposal, Debugger, LineMapping,
-  RoutineMapping, CodeElement, LogTreeController;
+  RoutineMapping, CodeElement, LogTreeController, IDELayout, IDEControllerIntf,
+  ProjectEvents, EventGroups, CurrentUnitEvents, PascalUnit;
 
 type
   TControllerState = (csStopped, csRunning, csPaused);
 
   TStateChangeEvent = procedure(AState: TControllerState) of object;
 
-  TIDEController = class(TComponent)
+  TIDEController = class(TInterfacedPersistent, IIDEController)
   private
+    FLayout: TIDELayout;
     FProject: TProject;
     FID: Integer;
     FPeekCompiler: TCompiler;
     FLastPeek: TDateTime;
-    FCpuView: TCPUView;
-    FWatchView: TWatchView;
     FPageControl: TJvPageControl;
     FSynCompletionProposal: TSynCompletionProposal;
     FEmulator: TD16Emulator;
-    FProjectTreeController: TProjectTreeController;
-    FCodeTreeController: TCodeTreeController;
     FErrors: Cardinal;
-    FLog: TLogTreeController;
     FDebugger: TDebugger;
     FIDEData: TIDEData;
     FOnChange: TStateChangeEvent;
+  //EventData-Objects
+    FProjectEvent: TProjectEvenetData;
+    FCurrentUnitEvent: TCurrentUnitEventData;
   //events
     procedure UpdateAllMappings();
     procedure PageControlChange(Sender: TObject);
@@ -44,11 +44,11 @@ type
     procedure HandleOnPause();
     procedure DoOnChange(AState: TControllerState);
     procedure BuildCompletionListForElements(ACompletion, AInsert: TStrings; AElements: TObjectList<TCodeElement>; AIgnoreDummyProcs: Boolean; ACaretY: Integer = -1);
+  //event-triggers
+    procedure ProjectChanged(AProject: TProject);
+    procedure UnitCacheChanged(AUnit: TPascalUnit);
   public
-    constructor Create(AOwner: TComponent; APageControl: TJvPageControl;
-      AProjectTree, ACodeTree: TVirtualStringTree;
-      ACPUView: TCPUView; AWatchView: TWatchView;
-      ALogTree: TVirtualStringTree; ACompletionProposal: TSynCompletionProposal); reintroduce;
+    constructor Create(AOwner: TForm; APageControl: TJvPageControl; ACompletionProposal: TSynCompletionProposal); reintroduce;
     destructor Destroy(); override;
 
     function SaveUnit(AUnit: TIDEUnit): Boolean;
@@ -94,13 +94,14 @@ type
     property Errors: Cardinal read FErrors;
     property IsRunning: Boolean read GetIsRunning;
     property IDEData: TIDEData read FIDEData write SetIDEData;
+    property Layout: TIDELayout read FLayout;
     property OnChange: TStateChangeEvent read FOnChange write FOnChange;
   end;
 
 implementation
 
 uses
-  DateUtils, IDETabSheet, PascalUnit, DataType, VarDeclaration, ProcDeclaration,
+  DateUtils, IDETabSheet, DataType, VarDeclaration, ProcDeclaration,
   CompilerUtil, xmldom, XMLIntf, msxmldom, XMLDoc, ComCtrls, UnitTemplates, UnitMapping;
 
 { TIDEController }
@@ -110,7 +111,7 @@ var
   LPage: TIDETabSheet;
   LUnit: TIDEUnit;
 begin
-  LPage := TIDETabSheet.Create(Self, FPageControl);
+  LPage := TIDETabSheet.Create(FPageControl, FPageControl);
   if Assigned(FIDEData) then
   begin
     LPage.IDEPage.IDEIcons := FIDEData.IDEImages;
@@ -256,7 +257,7 @@ var
   i: Integer;
 begin
   FDebugger.Clear();
-  FProjectTreeController.Project := nil;
+  ProjectChanged(nil);
   if Assigned(FProject) then
   begin
     FProject.Units.Clear;
@@ -296,7 +297,7 @@ procedure TIDEController.Compile;
 var
   LFileName: string;
 begin
-  FLog.Clear;
+  //FLog.Clear;
   FErrors := 0;
   CompileFile(FProject.ProjectUnit.FileName, FProject.Optimize, FProject.Assemble,
     FProject.BuildModule, FProject.UseBigEndian, HandleCompileMessage);
@@ -322,23 +323,20 @@ end;
 
 constructor TIDEController.Create;
 begin
-  inherited Create(AOwner);
+  inherited Create();
+  FLayout := TIDELayout.Create(AOwner);
   FPageControl := APageControl;
   FPageControl.OnChange := PageControlChange;
   FDebugger := TDebugger.Create();
   FPeekCompiler := TCompiler.Create();
   FPeekCompiler.PeekMode := True;
-  ACodeTree.NodeDataSize := SizeOf(TCodeNodeData);
-  FProjectTreeController := TProjectTreeController.Create(AProjectTree);
-  FCodeTreeController := TCodeTreeController.Create(ACodeTree);
-  FCpuView := ACPUView;
-  FCpuView.OnClose := HandleCPUViewClose;
-  FWatchView := AWatchView;
-  FWatchView.Debugger := FDebugger;
   FSynCompletionProposal := ACompletionProposal;
-  FLog := TLogTreeController.Create(ALogTree);
+  //FLog := TLogTreeController.Create(ALogTree);
   FLastPeek := Now();
   FID := 1;
+  //creating EventDataObjects
+  FProjectEvent := TProjectEvenetData.Create();
+  FCurrentUnitEvent := TCurrentUnitEventData.Create();
 end;
 
 procedure TIDEController.CreateNewProject(ATitle, AProjectFolder: string);
@@ -353,7 +351,7 @@ begin
   FProject.ProjectUnit.Caption := ChangeFileExt(FProject.ProjectName, '');
   Inc(FID);
   PageControlChange(FPageControl);
-  FProjectTreeController.Project := FProject;
+  ProjectChanged(FProject);
 end;
 
 procedure TIDEController.Cut;
@@ -370,6 +368,8 @@ end;
 destructor TIDEController.Destroy;
 begin
   FDebugger.Free;
+  FCurrentUnitEvent.Free;
+  FProjectEvent.Free;
   inherited;
 end;
 
@@ -407,11 +407,11 @@ procedure TIDEController.FokusFirstError;
 var
   LData: TLogEntry;
 begin
-  LData := FLog.GetFirstError();
-  if LData.Line > -1 then
-  begin
-    FokusIDEEdit(LData.UnitName, -1, LData.Line);
-  end;
+//  LData := FLog.GetFirstError();
+//  if LData.Line > -1 then
+//  begin
+//    FokusIDEEdit(LData.UnitName, -1, LData.Line);
+//  end;
 end;
 
 procedure TIDEController.FokusIDEEdit(AUnitName: string; ADebugCursor,
@@ -518,7 +518,7 @@ end;
 procedure TIDEController.HandleCompileMessage(AMessage, AUnitName: string;
   ALine: Integer; ALevel: TMessageLevel);
 begin
-  FLog.Add(AMessage, AUnitName, ALine, ALevel);
+//  FLog.Add(AMessage, AUnitName, ALine, ALevel);
   if ALevel <> mlNone then
   begin
     Inc(FErrors);
@@ -539,14 +539,14 @@ end;
 
 procedure TIDEController.HandleEmuMessage(AMessage: string);
 begin
-  FLog.Add('Emulator: ' + AMessage, '', -1, mlNone);
+//  FLog.Add('Emulator: ' + AMessage, '', -1, mlNone);
 end;
 
 procedure TIDEController.HandleOnDebugStep(AMapping: TLineMapping; ARoutine: TRoutineMapping);
 begin
   FokusIDEEdit(AMapping.D16UnitName, AMapping.UnitLine);
-  FWatchView.UpdateData(ARoutine);
-  FCpuView.UpdateData();
+//  FWatchView.UpdateData(ARoutine);
+//  FCpuView.UpdateData();
 end;
 
 procedure TIDEController.HandleOnPause;
@@ -599,7 +599,7 @@ begin
   FProject.LoadFromFile(AFile);
   FPeekCompiler.Reset();
   FPeekCompiler.SearchPath.Add(FProject.ProjectPath);
-  FProjectTreeController.Project := FProject;
+  ProjectChanged(FProject);
   AddPage(FProject.ProjectUnit.Caption, '', FProject.ProjectUnit);
   LPage := GetActiveIDEPage();
   if Assigned(LPage) then
@@ -649,9 +649,16 @@ begin
   begin
     if FPeekCompiler.PeekCompile(LPage.IDEEdit.Text, LPage.IDEUnit.Caption, LPage.IDEUnit = FProject.ProjectUnit, LUnit) then
     begin
-      FCodeTreeController.BuildCodeTreeFromUnit(LUnit);
+      UnitCacheChanged(LUnit);
     end;
   end;
+end;
+
+procedure TIDEController.ProjectChanged(AProject: TProject);
+begin
+  FProjectEvent.EventID := evProjectChanged;
+  FProjectEvent.Project := AProject;
+  FLayout.CallEvent(egProject, FProjectEvent);
 end;
 
 procedure TIDEController.Redo;
@@ -670,15 +677,15 @@ var
   LItem: TObject;
   LIndex: Integer;
 begin
-  LItem := FProjectTreeController.GetSelectedItem();
-  if LItem is TIDEUnit then
-  begin
-    LIndex := GetPageIndexForIdeUnit(TIDEUnit(LItem));
-    if (LIndex = -1) or ClosePage(LIndex)  then
-    begin
-      FProject.Units.Remove(TIDEUnit(LItem));
-    end;
-  end;
+//  LItem := FProjectTreeController.GetSelectedItem();
+//  if LItem is TIDEUnit then
+//  begin
+//    LIndex := GetPageIndexForIdeUnit(TIDEUnit(LItem));
+//    if (LIndex = -1) or ClosePage(LIndex)  then
+//    begin
+//      FProject.Units.Remove(TIDEUnit(LItem));
+//    end;
+//  end;
 end;
 
 procedure TIDEController.ResetAllDebugCursors;
@@ -697,16 +704,16 @@ procedure TIDEController.Run;
 begin
   if not IsRunning then
   begin
-    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.asm'));
-    FCPUView.Show;
-    FWatchView.Show;
-    FLog.Clear;
+//    FCPUView.LoadASMFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.asm'));
+//    FCPUView.Show;
+//    FWatchView.Show;
+//    FLog.Clear;
     FEmulator := TD16Emulator.Create();
     FEmulator.OnMessage := HandleEmuMessage;
     FEmulator.OnRun := HandleOnRun;
     FEmulator.OnPause := HandleOnPause;
-    FCpuView.SetEmulator(FEmulator);
-    FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
+//    FCpuView.SetEmulator(FEmulator);
+//    FLog.Add('Running: ' + ExtractFileName(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16')));
     FEmulator.LoadFromFile(ChangeFileExt(FProject.ProjectUnit.FileName, '.d16'), FProject.UseBigEndian);
     FDebugger.OnStep := HandleOnDebugStep;
     FDebugger.HookEmulator(FEmulator);
@@ -782,9 +789,9 @@ end;
 procedure TIDEController.SetIDEData(const Value: TIDEData);
 begin
   FIDEData := Value;
-  FProjectTreeController.Images := FIDEData.TreeImages;
-  FCodeTreeController.Images := FIDEData.CodeTreeImages;
-  FLog.Images := FIDEData.LogImages;
+//  FProjectTreeController.Images := FIDEData.TreeImages;
+//  FCodeTreeController.Images := FIDEData.CodeTreeImages;
+//  FLog.Images := FIDEData.LogImages;
 end;
 
 procedure TIDEController.StepOver;
@@ -804,8 +811,8 @@ begin
     FEmulator.Free;
     FEmulator := nil;
   end;
-  FCPUView.Hide;
-  FWatchView.Hide;
+//  FCPUView.Hide;
+//  FWatchView.Hide;
   ResetAllDebugCursors();
   DoOnChange(csStopped);
 end;
@@ -824,6 +831,13 @@ begin
   begin
     LPage.IDEEdit.Undo();
   end;
+end;
+
+procedure TIDEController.UnitCacheChanged(AUnit: TPascalUnit);
+begin
+  FCurrentUnitEvent.EventID := evCurrentUnitCacheChanged;
+  FCurrentUnitEvent.UnitCache := AUnit;
+  FLayout.CallEvent(egCurrentUnit, FCurrentUnitEvent);
 end;
 
 procedure TIDEController.UpdateAllMappings;

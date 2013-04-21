@@ -103,6 +103,23 @@
 			<DCCReference Include="LogTreeController.pas"/>
 			<DCCReference Include="IDEVersion.pas"/>
 			<DCCReference Include="PatchInfoLoader.pas"/>
+			<DCCReference Include="DockClient.pas"/>
+			<DCCReference Include="IDEView.pas"/>
+			<DCCReference Include="IDELayout.pas"/>
+			<DCCReference Include="EventGroups.pas"/>
+			<DCCReference Include="Events.pas"/>
+			<DCCReference Include="CodeTreeView.pas">
+				<Form>CodeView</Form>
+			</DCCReference>
+			<DCCReference Include="ProjectViewForm.pas">
+				<Form>ProjectView</Form>
+			</DCCReference>
+			<DCCReference Include="MessageViewForm.pas">
+				<Form>MessageView</Form>
+			</DCCReference>
+			<DCCReference Include="IDEControllerIntf.pas"/>
+			<DCCReference Include="ProjectEvents.pas"/>
+			<DCCReference Include="CurrentUnitEvents.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

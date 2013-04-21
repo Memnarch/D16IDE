@@ -10,20 +10,14 @@ uses
   JvComponentBase, Project,  IDEUnit, CompilerDefines, Compiler,
   PascalUnit, SynCompletionProposal, CPUViewForm, Emulator,
   WatchViewForm, IDETabSheet, IDEPageFrame, ProjectTreeController, CodeTreeController, IDEModule,
-  IDEController, IDEActionModule, SynEditMiscClasses, SynEditSearch;
+  IDEController, IDEActionModule, SynEditMiscClasses, SynEditSearch, CodeTreeView, ProjectViewForm,
+  MessageViewForm, StdCtrls;
 
 type
   TMainForm = class(TForm)
     MainMenu: TMainMenu;
     File1: TMenuItem;
     tbRun: TToolBar;
-    plLeft: TPanel;
-    plRight: TPanel;
-    SplitterLeft: TSplitter;
-    SplitterRight: TSplitter;
-    ProjectTree: TVirtualStringTree;
-    Panel1: TPanel;
-    Splitter1: TSplitter;
     Edit1: TMenuItem;
     Search1: TMenuItem;
     Project1: TMenuItem;
@@ -47,7 +41,6 @@ type
     Replace1: TMenuItem;
     miOptions: TMenuItem;
     PageControl: TJvPageControl;
-    CodeTree: TVirtualStringTree;
     SynCompletionProposal: TSynCompletionProposal;
     btnRun: TToolButton;
     btnStop: TToolButton;
@@ -74,15 +67,8 @@ type
     tbSearch: TToolBar;
     ToolButton4: TToolButton;
     ToolButton5: TToolButton;
-    LogTree: TVirtualStringTree;
     btnCheckUpdates: TMenuItem;
     procedure FormCreate(Sender: TObject);
-    procedure ProjectTreeDblClick(Sender: TObject);
-    procedure ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
-    procedure CodeTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
-      Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
-    procedure CodeTreeDblClick(Sender: TObject);
     procedure SynCompletionProposalExecute(Kind: SynCompletionType;
       Sender: TObject; var CurrentInput: string; var x, y: Integer;
       var CanExecute: Boolean);
@@ -92,11 +78,12 @@ type
     procedure LogTreeDblClick(Sender: TObject);
   private
     { Private declarations }
-    FCpuView: TCPUView;
-    FWatchView: TWatchView;
     FIDEData: TIDEData;
     FIDEActions: TIDEActions;
     FController: TIDEController;
+    FCodeView: TCodeView;
+    FProjectView: TProjectView;
+    FMessageView: TMessageView;
     procedure BindActions();
   public
     { Public declarations }
@@ -111,7 +98,7 @@ implementation
 
 uses
  CompilerUtil, ProjectOptionDialog, DateUtils, CodeElement,
- VarDeclaration, ProcDeclaration, DataType, LogTreeController;
+ VarDeclaration, ProcDeclaration, DataType, LogTreeController, EventGroups;
 
 {$R *.dfm}
 
@@ -162,53 +149,33 @@ begin
 //  miOptions.Action := FIDEActions.actProjectOptions;
 end;
 
-procedure TMainForm.CodeTreeDblClick(Sender: TObject);
-var
-  LNode: PVirtualNode;
-  LPos: TPoint;
-  LPage: TIDEPage;
-begin
-  GetCursorPos(LPos);
-  LPos := CodeTree.ScreenToClient(LPos);
-  LNode := CodeTree.GetNodeAt(LPos.X, LPos.Y);
-  if Assigned(LNode) then
-  begin
-    if PCodeNodeData(CodeTree.GetNodeData(LNode)).Line >= 0 then
-    begin
-      LPage := FController.GetActiveIDEPage();
-      if Assigned(LPage) then
-      begin
-        LPage.IDEEdit.SetFocus;
-        LPAge.IDEEdit.CaretY := PCodeNodeData(CodeTree.GetNodeData(LNode)).Line;
-      end;
-    end;
-  end;
-end;
-
-procedure TMainForm.CodeTreeGetText(Sender: TBaseVirtualTree;
-  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var CellText: string);
-begin
-  CellText := PCodeNodeData(Sender.GetNodeData(Node)).Caption;
-end;
-
 constructor TMainForm.Create(AOwner: TComponent);
 begin
   inherited;
-  FCpuView := TCPUView.Create(Self);
-  FCpuView.Parent := Self;
-  FCPuView.Align := alRight;
-  FWatchView := TWatchView.Create(Self);
-  FWatchView.Parent := plLeft;
-  FWatchView.Align := alBottom;
+//  FCpuView := TCPUView.Create(Self);
+//  FCpuView.Parent := Self;
+//  FCPuView.Align := alRight;
+//  FWatchView := TWatchView.Create(Self);
+//  FWatchView.Parent := plLeft;
+//  FWatchView.Align := alBottom;
+  FCodeView := TCodeView.Create(Self);
+  FProjectView := TProjectView.Create(Self);
+  FMessageView := TMessageView.Create(Self);
   FIDEData := TIDEData.Create(Self);
   FIDEActions := TIDEActions.Create(Self);
-  FController := TIDEController.Create(Self, PageControl, ProjectTree, CodeTree, FCPUView, FWatchView,
-    LogTree, SynCompletionProposal);
+  FController := TIDEController.Create(Self, PageControl, SynCompletionProposal);
   FIDEActions.Controller := FController;
   FIDEActions.IDEData := FIDEData;
   FController.IDEData := FIDEData;
+  FController.Layout.RegisterView(FCodeView, [egCurrentUnit]);
+  FController.Layout.RegisterView(FProjectView, [egProject]);
+  FController.Layout.RegisterView(FMessageView, [egCompiler, egEmulator]);
   BindActions();
+  FProjectView.IDEData := FIDEData;
+  FCodeView.IDEData := FIDEData;
+  FCodeView.Controller := FController;
+  FProjectView.Controller := FController;
+  FMessageView.Controller := FController;
 end;
 
 destructor TMainForm.Destroy;
@@ -239,11 +206,12 @@ begin
       end;
     end;
   end;
+  FController.Layout.Save('Default');
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  ProjectTree.NodeDataSize := SizeOf(Cardinal);
+    FController.Layout.Load('Default');
   FController.CreateNewProject('Project1', '');
 end;
 
@@ -253,86 +221,22 @@ var
   LNode: PVirtualNode;
   LData: PLogEntry;
 begin
-  if GetCursorPos(LPos) then
-  begin
-    LPos := LogTree.ScreenToClient(LPos);
-    LNode := LogTree.GetNodeAt(LPos.X, LPos.Y);
-    if Assigned(LNode) then
-    begin
-      LData := LogTree.GetNodeData(LNode);
-      if Assigned(LData) then
-      begin
-        if LData.Line > -1 then
-        begin
-          FController.FokusIDEEdit(LData.UnitName, -1, LData.Line);
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure TMainForm.ProjectTreeContextPopup(Sender: TObject; MousePos: TPoint;
-  var Handled: Boolean);
-var
-  LNode: PVirtualNode;
-begin
-  LNode := ProjectTree.GetNodeAt(MousePos.X, MousePos.Y);
-  if LNode = ProjectTree.GetFirst() then
-  begin
-    ProjectTree.PopupMenu := FIDEData.ProjectPopup;
-  end
-  else
-  begin
-    if Assigned(LNode) then
-    begin
-      ProjectTree.PopupMenu := FIDEData.UnitPopup;
-    end
-    else
-    begin
-      ProjectTree.PopupMenu := nil;
-    end;
-  end;
-end;
-
-procedure TMainForm.ProjectTreeDblClick(Sender: TObject);
-var
-  LPos: TPoint;
-  LNode: PVirtualNode;
-  LData: PProjectNodeData;
-  LUnit: TIDEUnit;
-begin
-  LUnit := nil;
-  GetCursorPos(LPos);
-  LPos := ProjectTree.ScreenToClient(LPos);
-  LNode := ProjectTree.GetNodeAt(LPos.X, LPos.Y);
-  if Assigned(LNode) then
-  begin
-    if LNode = ProjectTree.GetFirst() then
-    begin
-      LData := ProjectTree.GetNodeData(LNode);
-      if Assigned(LData) then
-      begin
-        LUnit := TProject(LData.Item).ProjectUnit;
-      end;
-    end
-    else
-    begin
-      LData := ProjectTree.GetNodeData(LNode);
-      if Assigned(LData) then
-      begin
-        LUnit := TIDEUnit(LData.Item);
-      end;
-    end;
-
-    if Assigned(LUnit) then
-    begin
-      if not FController.IDEUnitIsOpen(LUnit) then
-      begin
-        FController.AddPage(LUnit.Caption, '', LUnit);
-      end;
-        FController.FokusIDEPageByUnit(LUnit);
-    end;
-  end;
+//  if GetCursorPos(LPos) then
+//  begin
+//    LPos := LogTree.ScreenToClient(LPos);
+//    LNode := LogTree.GetNodeAt(LPos.X, LPos.Y);
+//    if Assigned(LNode) then
+//    begin
+//      LData := LogTree.GetNodeData(LNode);
+//      if Assigned(LData) then
+//      begin
+//        if LData.Line > -1 then
+//        begin
+//          FController.FokusIDEEdit(LData.UnitName, -1, LData.Line);
+//        end;
+//      end;
+//    end;
+//  end;
 end;
 
 procedure TMainForm.SynCompletionProposalExecute(Kind: SynCompletionType;

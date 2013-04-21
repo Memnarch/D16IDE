@@ -17,128 +17,14 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
-  object SplitterLeft: TSplitter
-    Left = 185
-    Top = 26
-    Height = 478
-  end
-  object SplitterRight: TSplitter
-    Left = 996
-    Top = 26
-    Height = 478
-    Align = alRight
-    ExplicitLeft = 764
-    ExplicitTop = 35
-    ExplicitHeight = 606
-  end
-  object Splitter1: TSplitter
-    Left = 0
-    Top = 504
-    Width = 1184
-    Height = 3
-    Cursor = crVSplit
-    Align = alBottom
-    ExplicitLeft = 185
-    ExplicitTop = 29
-    ExplicitWidth = 565
-  end
-  object plLeft: TPanel
-    Left = 0
-    Top = 26
-    Width = 185
-    Height = 478
-    Align = alLeft
-    BevelOuter = bvNone
-    TabOrder = 0
-    object CodeTree: TVirtualStringTree
-      AlignWithMargins = True
-      Left = 3
-      Top = 3
-      Width = 179
-      Height = 472
-      Align = alClient
-      Header.AutoSizeIndex = 0
-      Header.DefaultHeight = 17
-      Header.Font.Charset = DEFAULT_CHARSET
-      Header.Font.Color = clWindowText
-      Header.Font.Height = -11
-      Header.Font.Name = 'Tahoma'
-      Header.Font.Style = []
-      Header.MainColumn = -1
-      TabOrder = 0
-      OnDblClick = CodeTreeDblClick
-      OnGetText = CodeTreeGetText
-      Columns = <>
-    end
-  end
-  object plRight: TPanel
-    Left = 999
-    Top = 26
-    Width = 185
-    Height = 478
-    Align = alRight
-    BevelOuter = bvNone
-    TabOrder = 1
-    object ProjectTree: TVirtualStringTree
-      AlignWithMargins = True
-      Left = 3
-      Top = 3
-      Width = 179
-      Height = 472
-      Align = alClient
-      Header.AutoSizeIndex = 0
-      Header.DefaultHeight = 17
-      Header.Font.Charset = DEFAULT_CHARSET
-      Header.Font.Color = clWindowText
-      Header.Font.Height = -11
-      Header.Font.Name = 'Tahoma'
-      Header.Font.Style = []
-      Header.MainColumn = -1
-      TabOrder = 0
-      TreeOptions.AutoOptions = [toAutoDropExpand, toAutoExpand, toAutoScrollOnExpand, toAutoTristateTracking, toAutoDeleteMovedNodes]
-      TreeOptions.SelectionOptions = [toRightClickSelect]
-      OnContextPopup = ProjectTreeContextPopup
-      OnDblClick = ProjectTreeDblClick
-      Columns = <>
-    end
-  end
-  object Panel1: TPanel
-    Left = 0
-    Top = 507
-    Width = 1184
-    Height = 128
-    Align = alBottom
-    BevelOuter = bvNone
-    Caption = 'Panel1'
-    TabOrder = 2
-    object LogTree: TVirtualStringTree
-      AlignWithMargins = True
-      Left = 3
-      Top = 3
-      Width = 1178
-      Height = 122
-      Align = alClient
-      Header.AutoSizeIndex = 0
-      Header.DefaultHeight = 17
-      Header.Font.Charset = DEFAULT_CHARSET
-      Header.Font.Color = clWindowText
-      Header.Font.Height = -11
-      Header.Font.Name = 'Tahoma'
-      Header.Font.Style = []
-      Header.MainColumn = -1
-      TabOrder = 0
-      OnDblClick = LogTreeDblClick
-      Columns = <>
-    end
-  end
   object PageControl: TJvPageControl
     AlignWithMargins = True
-    Left = 191
+    Left = 3
     Top = 29
-    Width = 802
-    Height = 472
+    Width = 1178
+    Height = 603
     Align = alClient
-    TabOrder = 3
+    TabOrder = 0
     OnContextPopup = PageControlContextPopup
   end
   object ControlBar: TControlBar
@@ -151,7 +37,7 @@ object MainForm: TMainForm
     BevelInner = bvNone
     BevelKind = bkNone
     DrawingStyle = dsGradient
-    TabOrder = 4
+    TabOrder = 1
     object tbRun: TToolBar
       Left = 291
       Top = 2

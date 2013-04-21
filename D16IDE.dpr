@@ -30,7 +30,18 @@ uses
   AboutDialogForm in 'AboutDialogForm.pas' {AboutDialog},
   LogTreeController in 'LogTreeController.pas',
   IDEVersion in 'IDEVersion.pas',
-  PatchInfoLoader in 'PatchInfoLoader.pas';
+  PatchInfoLoader in 'PatchInfoLoader.pas',
+  DockClient in 'DockClient.pas',
+  IDEView in 'IDEView.pas',
+  IDELayout in 'IDELayout.pas',
+  EventGroups in 'EventGroups.pas',
+  Events in 'Events.pas',
+  CodeTreeView in 'CodeTreeView.pas' {CodeView},
+  ProjectViewForm in 'ProjectViewForm.pas' {ProjectView},
+  MessageViewForm in 'MessageViewForm.pas' {MessageView},
+  IDEControllerIntf in 'IDEControllerIntf.pas',
+  ProjectEvents in 'ProjectEvents.pas',
+  CurrentUnitEvents in 'CurrentUnitEvents.pas';
 
 {$R *.res}
 
