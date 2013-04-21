@@ -41,7 +41,8 @@ uses
   MessageViewForm in 'MessageViewForm.pas' {MessageView},
   IDEControllerIntf in 'IDEControllerIntf.pas',
   ProjectEvents in 'ProjectEvents.pas',
-  CurrentUnitEvents in 'CurrentUnitEvents.pas';
+  CurrentUnitEvents in 'CurrentUnitEvents.pas',
+  CompilerEvents in 'CompilerEvents.pas';
 
 {$R *.res}
 
