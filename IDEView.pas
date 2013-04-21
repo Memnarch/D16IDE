@@ -23,7 +23,7 @@ implementation
 constructor TIDEView.Create(AOwner: TComponent);
 begin
   inherited;
-  BorderStyle := bsToolWindow;
+  BorderStyle := bsSizeToolWin;
 end;
 
 procedure TIDEView.DoClose(var Action: TCloseAction);
