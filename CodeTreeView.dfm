@@ -1,7 +1,7 @@
 object CodeView: TCodeView
   Left = 0
   Top = 0
-  Caption = 'CodeView'
+  Caption = 'Structure'
   ClientHeight = 372
   ClientWidth = 246
   Color = clBtnFace

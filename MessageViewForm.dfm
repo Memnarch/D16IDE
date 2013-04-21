@@ -1,7 +1,7 @@
 object MessageView: TMessageView
   Left = 0
   Top = 0
-  Caption = 'MessageView'
+  Caption = 'Messages'
   ClientHeight = 176
   ClientWidth = 654
   Color = clBtnFace

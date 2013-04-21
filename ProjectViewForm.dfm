@@ -1,8 +1,8 @@
 object ProjectView: TProjectView
   Left = 0
   Top = 0
-  Caption = 'ProjectView'
-  ClientHeight = 290
+  Caption = 'Project Manager'
+  ClientHeight = 493
   ClientWidth = 244
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,7 +19,7 @@ object ProjectView: TProjectView
     Left = 3
     Top = 3
     Width = 238
-    Height = 284
+    Height = 487
     Align = alClient
     Header.AutoSizeIndex = 0
     Header.DefaultHeight = 17
