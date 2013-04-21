@@ -16,20 +16,11 @@ type
     OpenProjectDialog: TOpenDialog;
     TabPopUp: TPopupMenu;
     Close1: TMenuItem;
-    UnitPopup: TPopupMenu;
-    NewUnit1: TMenuItem;
-    AddUnit1: TMenuItem;
-    Options2: TMenuItem;
     ToolBarDisabledImages: TImageList;
     dlgFindReplace: TJvFindReplace;
     IDEImages: TImageList;
     CodeTreeImages: TImageList;
     LogImages: TImageList;
-    RemoveUnit1: TMenuItem;
-    ProjectPopup: TPopupMenu;
-    NewUnit2: TMenuItem;
-    AddUnit2: TMenuItem;
-    Options3: TMenuItem;
   private
     { Private declarations }
   public

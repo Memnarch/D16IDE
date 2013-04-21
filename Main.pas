@@ -75,7 +75,6 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure PageControlContextPopup(Sender: TObject;
   MousePos: TPoint; var Handled: Boolean);
-    procedure LogTreeDblClick(Sender: TObject);
   private
     { Private declarations }
     FIDEData: TIDEData;
@@ -172,7 +171,9 @@ begin
   FController.Layout.RegisterView(FMessageView, [egCompiler, egEmulator]);
   BindActions();
   FProjectView.IDEData := FIDEData;
+  FProjectView.IDEActions := FIDEActions;
   FCodeView.IDEData := FIDEData;
+  FMessageView.IDEData := FIDEData;
   FCodeView.Controller := FController;
   FProjectView.Controller := FController;
   FMessageView.Controller := FController;
@@ -215,30 +216,6 @@ begin
   FController.CreateNewProject('Project1', '');
 end;
 
-procedure TMainForm.LogTreeDblClick(Sender: TObject);
-var
-  LPos: TPoint;
-  LNode: PVirtualNode;
-  LData: PLogEntry;
-begin
-//  if GetCursorPos(LPos) then
-//  begin
-//    LPos := LogTree.ScreenToClient(LPos);
-//    LNode := LogTree.GetNodeAt(LPos.X, LPos.Y);
-//    if Assigned(LNode) then
-//    begin
-//      LData := LogTree.GetNodeData(LNode);
-//      if Assigned(LData) then
-//      begin
-//        if LData.Line > -1 then
-//        begin
-//          FController.FokusIDEEdit(LData.UnitName, -1, LData.Line);
-//        end;
-//      end;
-//    end;
-//  end;
-end;
-
 procedure TMainForm.SynCompletionProposalExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
@@ -246,9 +223,5 @@ begin
   FController.BuildCompletionLists(SynCompletionProposal.ItemList, SynCompletionProposal.InsertList);
   SynCompletionProposal.NbLinesInWindow := 8;
 end;
-
-initialization
-
-//Si.Enabled := True;
 
 end.

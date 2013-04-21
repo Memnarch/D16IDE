@@ -29,6 +29,7 @@ object MessageView: TMessageView
     Header.Font.Style = []
     Header.MainColumn = -1
     TabOrder = 0
+    OnDblClick = LogTreeDblClick
     Columns = <>
   end
 end

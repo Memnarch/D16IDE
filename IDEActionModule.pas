@@ -38,7 +38,6 @@ type
     actFindNext: TAction;
     actFindPrevious: TAction;
     actAbout: TAction;
-    actRemoveUnitFromProject: TAction;
     actCheckForUpdates: TAction;
     procedure actNewUnitExecute(Sender: TObject);
     procedure actCloseUnitByTabExecute(Sender: TObject);
@@ -69,7 +68,6 @@ type
     procedure actStepOverExecute(Sender: TObject);
     procedure actStepUntilReturnExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
-    procedure actRemoveUnitFromProjectExecute(Sender: TObject);
     procedure actCheckForUpdatesExecute(Sender: TObject);
   private
     FController: TIDEController;
@@ -259,11 +257,6 @@ end;
 procedure TIDEActions.actRedoExecute(Sender: TObject);
 begin
   FController.Redo;
-end;
-
-procedure TIDEActions.actRemoveUnitFromProjectExecute(Sender: TObject);
-begin
-  FController.RemoveSelectedUnitFromProject();
 end;
 
 procedure TIDEActions.actRunExecute(Sender: TObject);
@@ -469,15 +462,6 @@ procedure TIDEActions.SetIDEData(const Value: TIDEData);
 begin
   FIDEData := Value;
   FIDEData.Close1.Action := actCloseUnitByTab;
-  //UnitPopup
-  FIDEData.NewUnit1.Action := actNewUnit;
-  FIDEData.AddUnit1.Action := actAddExistingUnit;
-  FIDEData.RemoveUnit1.Action := actRemoveUnitFromProject;
-  FIDEData.Options2.Action := actProjectOptions;
-  //Projectpopup
-  FIDEData.NewUnit2.Action := actNewUnit;
-  FIDEData.AddUnit2.Action := actAddExistingUnit;
-  FIDEData.Options3.Action := actProjectOptions;
 end;
 
 end.
