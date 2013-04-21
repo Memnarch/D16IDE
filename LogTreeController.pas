@@ -85,6 +85,7 @@ begin
     if Assigned(LData) and (LData.Line > -1) and (LData.EntryType in [mlError, mlFatal]) then
     begin
       Result := LData^;
+      Break;
     end;
     LNode := FTree.GetNextSibling(LNode);
   end;
