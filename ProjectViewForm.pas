@@ -77,7 +77,6 @@ end;
 
 procedure TProjectView.FormCreate(Sender: TObject);
 begin
-  Name := 'ProjectView';
   ProjectTree.NodeDataSize := SizeOf(Cardinal);
   FTreeController := TProjectTreeController.Create(ProjectTree);
 end;
