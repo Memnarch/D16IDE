@@ -149,6 +149,7 @@ type
     procedure SpaceProc;
     procedure StringProc;
     procedure SymbolProc;
+    procedure DASMStringProc;
     procedure UnknownProc;
     procedure SetDelphiVersion(const Value: TDelphiVersion);
     procedure SetPackageSource(const Value: Boolean);
@@ -825,6 +826,21 @@ begin
     Inc(Run);
 end;
 
+procedure TSynD16Syn.DASMStringProc;
+begin
+  fTokenID := tkString;
+  Inc(Run);
+  while not IsLineEnd(Run) do
+  begin
+    if fLine[Run] = '"' then begin
+      Inc(Run);
+      if fLine[Run] <> '"' then
+        break;
+    end;
+    Inc(Run);
+  end;
+end;
+
 destructor TSynD16Syn.Destroy;
 begin
   FD16Keywords.Free;
@@ -1068,7 +1084,16 @@ begin
               '<': LowerProc;
               '@': AddressOpProc;
               else
+              begin
+                if (fRange = rsAsm) and (fLine[Run] = '"') then
+                begin
+                  DASMStringProc();
+                end
+                else
+                begin
                  SymbolProc;
+                end;
+              end;
             end;
           end;
         else
