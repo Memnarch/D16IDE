@@ -736,6 +736,7 @@ begin
   CommentAttri.Foreground := clGreen;
   StringAttri.Foreground := clBlue;
   NumberAttri.Foreground := clBlue;
+  HexAttri.Foreground := clBlue;
 end;
 
 procedure TSynD16Syn.AddressOpProc;
@@ -909,6 +910,12 @@ procedure TSynD16Syn.NumberProc;
 
 begin
   Inc(Run);
+  if (fLine[Run-1] = '0') and (fLine[Run] = 'x') then
+  begin
+    IntegerProc();//this allows HexValues with the prefix 0x instead of just $
+    Exit;
+  end;
+
   fTokenID := tkNumber;
   while IsNumberChar do
   begin
