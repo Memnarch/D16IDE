@@ -972,10 +972,20 @@ end;
 
 procedure TSynD16Syn.SemicolonProc;
 begin
-  Inc(Run);
-  fTokenID := tkSymbol;
-  if fRange in [rsProperty, rsExports] then
-    fRange := rsUnknown;
+  if fRange = rsAsm then
+  begin
+    fTokenID := tkComment;
+    repeat
+      Inc(Run)
+    until IsLineEnd(Run);
+  end
+  else
+  begin
+    Inc(Run);
+    fTokenID := tkSymbol;
+    if fRange in [rsProperty, rsExports] then
+      fRange := rsUnknown;
+  end;
 end;
 
 procedure TSynD16Syn.SlashProc;
