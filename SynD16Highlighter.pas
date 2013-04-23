@@ -65,13 +65,14 @@ type
 const
   LastDelphiVersion = dvDelphi2005;
   BDSVersionPrefix = 'BDS';
+  CTableDASMStart = 389;
 
 type
   TSynD16Syn = class(TSynCustomHighlighter)
   private
     fAsmStart: Boolean;
     fRange: TRangeState;
-    fIdentFuncTable: array[0..389] of TIdentFuncTableFunc;
+    fIdentFuncTable: array[0..426] of TIdentFuncTableFunc;
     fTokenID: TtkTokenKind;
     fStringAttri: TSynHighlighterAttributes;
     fCharAttri: TSynHighlighterAttributes;
@@ -87,7 +88,8 @@ type
     fSpaceAttri: TSynHighlighterAttributes;
     fDelphiVersion: TDelphiVersion;
     fPackageSource: Boolean;
-    FKeywords: TDictionary<string, Integer>;
+    FD16Keywords: TDictionary<string, Integer>;
+    FDASMKeywords: TDictionary<string, Integer>;
     function AltFunc(Index: Integer): TtkTokenKind;
     function KeyWordFunc(Index: Integer): TtkTokenKind;
     function FuncAsm(Index: Integer): TtkTokenKind;
@@ -213,7 +215,7 @@ uses
 const
   // if the language is case-insensitive keywords *must* be in lowercase
   {base KeyWords 0..110, DASM related keywords 111..end}
-  KeyWords: array[0..111] of UnicodeString = (
+  KeyWords: array[0..148] of UnicodeString = (
     'absolute', 'abstract', 'and', 'array', 'as', 'asm', 'assembler',
     'automated', 'begin', 'case', 'cdecl', 'class', 'const', 'constructor',
     'contains', 'default', 'deprecated', 'destructor', 'dispid',
@@ -230,12 +232,14 @@ const
     'safecall', 'sealed', 'set', 'shl', 'shr', 'stdcall', 'stored', 'string',
     'stringresource', 'then', 'threadvar', 'to', 'try', 'type', 'unit', 'until',
     'uses', 'var', 'virtual', 'while', 'with', 'write', 'writeonly', 'xor'
-    {DASM related keywords, only active in ASM block},
-    'ret'
+    {DASM related keywords, only active in ASM block, however 'end' is required to trigger asm end},
+    'end', 'set', 'add', 'sub', 'mul', 'mli', 'div', 'dvi', 'mod', 'mdi', 'and', 'bor', 'xor',
+    'shr', 'asr', 'shl', 'ifb', 'ifc', 'ife', 'ifn', 'ifg', 'ifa', 'ifl', 'ifu', 'adx',
+    'sbx', 'sti', 'std', 'jsr', 'int', 'iag', 'ias', 'rfi', 'iaq', 'hwn', 'hwq', 'hwi', 'dat'
   );
 
   {base indices 0..388, DASM indices 389..end}
-  KeyIndices: array[0..389] of Integer = (
+  KeyIndices: array[0..426] of Integer = (
     -1, -1, -1, 105, -1, 51, -1, 108, -1, -1, -1, -1, -1, 75, -1, -1, 46, -1,
     -1, 103, -1, -1, -1, -1, 55, -1, -1, -1, -1, 76, -1, -1, 96, 14, -1, 31, 3,
     102, -1, -1, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, 78, -1, -1, 25, -1,
@@ -258,7 +262,9 @@ const
     9, -1, 91, -1, -1, -1, -1, -1, -1, 49, -1, 21, -1, -1, -1, -1, -1, -1, 43,
     -1, 82, -1, 19, 104, -1, -1, -1, -1, -1
     {DASM related indices},
-    111
+    111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144,
+    145, 146, 147, 148
   );
 
 {$Q-}
@@ -276,9 +282,19 @@ begin
     inc(Str);
   end;
   //Result := Result mod High(fIdentFuncTable);// 389;//Length(fIdentFuncTable);//389;
-  if FKeywords.TryGetValue(LKey, LValue) then
+  if (fRange = rsAsm)then
   begin
-    Result := LValue;
+    if FDASMKeywords.TryGetValue(LKey, LValue) then
+    begin
+      Result := LValue;
+    end;
+  end
+  else
+  begin
+    if FD16Keywords.TryGetValue(LKey, LValue) then
+    begin
+      Result := LValue;
+    end;
   end;
   fStringLen := Str - fToIdent;
 end;
@@ -303,7 +319,7 @@ begin
   for i := Low(fIdentFuncTable) to High(fIdentFuncTable) do
     if KeyIndices[i] = -1 then
       fIdentFuncTable[i] := AltFunc;
-
+  //these functions are active during normal D16pascal
   fIdentFuncTable[275] := FuncAsm;
   fIdentFuncTable[41] := FuncAutomated;
   fIdentFuncTable[112] := FuncCdecl;
@@ -338,6 +354,9 @@ begin
   fIdentFuncTable[204] := FuncThreadvar;
   fIdentFuncTable[7] := FuncWrite;
   fIdentFuncTable[91] := FuncWriteonly;
+  //theses functions are active in ASM blocks ONLY
+  fIdentFuncTable[CTableDASMStart] := FuncEnd;
+
 
   for i := Low(fIdentFuncTable) to High(fIdentFuncTable) do
     if @fIdentFuncTable[i] = nil then
@@ -347,13 +366,23 @@ end;
 procedure TSynD16Syn.InitKeyWords;
 var
   i: Integer;
+  LIndex: Integer;
 begin
-  for i := Low(KeyIndices) to High(KeyIndices) do
+  for i := Low(KeyIndices) to CTableDASMStart -1 do
   begin
     if KeyIndices[i] > -1 then
     begin
-      FKeywords.Add(KeyWords[KeyIndices[i]], i);
+      FD16Keywords.Add(KeyWords[KeyIndices[i]], i);
     end;
+  end;
+  try
+    for i := CTableDASMStart to High(KeyIndices) do
+    begin
+      FDASMKeywords.Add(KeyWords[KeyIndices[i]], i);
+    end;
+  except
+    LIndex := KeyIndices[i];
+    MessageBox(0, @IntToStr(LIndex)[1], '', 0);
   end;
 end;
 
@@ -658,7 +687,8 @@ end;
 constructor TSynD16Syn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FKeywords := TDictionary<string, Integer>.Create();
+  FD16Keywords := TDictionary<string, Integer>.Create();
+  FDASMKeywords := TDictionary<string, Integer>.Create();
   InitKeyWords();
   fCaseSensitive := False;
 
@@ -796,7 +826,8 @@ end;
 
 destructor TSynD16Syn.Destroy;
 begin
-  FKeywords.Free;
+  FD16Keywords.Free;
+  FDASMKeywords.Free;
   inherited;
 end;
 
