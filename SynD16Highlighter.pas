@@ -45,6 +45,7 @@ uses
   SynEditHighlighter,
   SynUnicode,
 {$ENDIF}
+  Generics.Collections,
   SysUtils,
   Classes;
 
@@ -70,7 +71,7 @@ type
   private
     fAsmStart: Boolean;
     fRange: TRangeState;
-    fIdentFuncTable: array[0..388] of TIdentFuncTableFunc;
+    fIdentFuncTable: array[0..389] of TIdentFuncTableFunc;
     fTokenID: TtkTokenKind;
     fStringAttri: TSynHighlighterAttributes;
     fCharAttri: TSynHighlighterAttributes;
@@ -86,6 +87,7 @@ type
     fSpaceAttri: TSynHighlighterAttributes;
     fDelphiVersion: TDelphiVersion;
     fPackageSource: Boolean;
+    FKeywords: TDictionary<string, Integer>;
     function AltFunc(Index: Integer): TtkTokenKind;
     function KeyWordFunc(Index: Integer): TtkTokenKind;
     function FuncAsm(Index: Integer): TtkTokenKind;
@@ -148,6 +150,7 @@ type
     procedure UnknownProc;
     procedure SetDelphiVersion(const Value: TDelphiVersion);
     procedure SetPackageSource(const Value: Boolean);
+    procedure InitKeyWords();
   protected
     function GetSampleSource: UnicodeString; override;
     function IsFilterStored: Boolean; override;
@@ -157,6 +160,7 @@ type
     class function GetFriendlyLanguageName: UnicodeString; override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy(); override;
     function GetDefaultAttribute(Index: Integer): TSynHighlighterAttributes;
       override;
     function GetEol: Boolean; override;
@@ -208,7 +212,8 @@ uses
 
 const
   // if the language is case-insensitive keywords *must* be in lowercase
-  KeyWords: array[0..110] of UnicodeString = (
+  {base KeyWords 0..110, DASM related keywords 111..end}
+  KeyWords: array[0..111] of UnicodeString = (
     'absolute', 'abstract', 'and', 'array', 'as', 'asm', 'assembler',
     'automated', 'begin', 'case', 'cdecl', 'class', 'const', 'constructor',
     'contains', 'default', 'deprecated', 'destructor', 'dispid',
@@ -225,9 +230,12 @@ const
     'safecall', 'sealed', 'set', 'shl', 'shr', 'stdcall', 'stored', 'string',
     'stringresource', 'then', 'threadvar', 'to', 'try', 'type', 'unit', 'until',
     'uses', 'var', 'virtual', 'while', 'with', 'write', 'writeonly', 'xor'
+    {DASM related keywords, only active in ASM block},
+    'ret'
   );
 
-  KeyIndices: array[0..388] of Integer = (
+  {base indices 0..388, DASM indices 389..end}
+  KeyIndices: array[0..389] of Integer = (
     -1, -1, -1, 105, -1, 51, -1, 108, -1, -1, -1, -1, -1, 75, -1, -1, 46, -1,
     -1, 103, -1, -1, -1, -1, 55, -1, -1, -1, -1, 76, -1, -1, 96, 14, -1, 31, 3,
     102, -1, -1, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, 78, -1, -1, 25, -1,
@@ -249,18 +257,29 @@ const
     -1, -1, 26, 47, 38, -1, -1, 93, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     9, -1, 91, -1, -1, -1, -1, -1, -1, 49, -1, 21, -1, -1, -1, -1, -1, -1, 43,
     -1, 82, -1, 19, 104, -1, -1, -1, -1, -1
+    {DASM related indices},
+    111
   );
 
 {$Q-}
 function TSynD16Syn.HashKey(Str: PWideChar): Cardinal;
+var
+  LKey: string;
+  LValue: Integer;
 begin
   Result := 0;
+  LKey := '';
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 812 + Ord(Str^) * 76;
+    LKey := LKey + Str^;
+    //Result := Result * 812 + Ord(Str^) * 76;
     inc(Str);
   end;
-  Result := Result mod 389;
+  //Result := Result mod High(fIdentFuncTable);// 389;//Length(fIdentFuncTable);//389;
+  if FKeywords.TryGetValue(LKey, LValue) then
+  begin
+    Result := LValue;
+  end;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
@@ -323,6 +342,19 @@ begin
   for i := Low(fIdentFuncTable) to High(fIdentFuncTable) do
     if @fIdentFuncTable[i] = nil then
       fIdentFuncTable[i] := KeyWordFunc;
+end;
+
+procedure TSynD16Syn.InitKeyWords;
+var
+  i: Integer;
+begin
+  for i := Low(KeyIndices) to High(KeyIndices) do
+  begin
+    if KeyIndices[i] > -1 then
+    begin
+      FKeywords.Add(KeyWords[KeyIndices[i]], i);
+    end;
+  end;
 end;
 
 function TSynD16Syn.AltFunc(Index: Integer): TtkTokenKind;
@@ -626,6 +658,8 @@ end;
 constructor TSynD16Syn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FKeywords := TDictionary<string, Integer>.Create();
+  InitKeyWords();
   fCaseSensitive := False;
 
   fDelphiVersion := LastDelphiVersion;
@@ -758,6 +792,12 @@ begin
   inc(Run);
   if fLine[Run] = #10 then
     Inc(Run);
+end;
+
+destructor TSynD16Syn.Destroy;
+begin
+  FKeywords.Free;
+  inherited;
 end;
 
 procedure TSynD16Syn.IdentProc;
@@ -1019,7 +1059,7 @@ end;
 function TSynD16Syn.GetTokenID: TtkTokenKind;
 begin
   if not fAsmStart and (fRange = rsAsm)
-    and not (fTokenId in [tkNull, tkComment, tkDirec, tkSpace])
+    and not (fTokenId in [tkNull, tkComment, tkDirec, tkSpace, tkKey, tkString, tkNumber, tkFloat, tkHex, tkChar])
   then
     Result := tkAsm
   else
