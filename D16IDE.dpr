@@ -42,7 +42,8 @@ uses
   IDEControllerIntf in 'IDEControllerIntf.pas',
   ProjectEvents in 'ProjectEvents.pas',
   CurrentUnitEvents in 'CurrentUnitEvents.pas',
-  CompilerEvents in 'CompilerEvents.pas';
+  CompilerEvents in 'CompilerEvents.pas',
+  SynD16Highlighter in 'SynD16Highlighter.pas';
 
 {$R *.res}
 

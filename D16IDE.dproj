@@ -121,6 +121,7 @@
 			<DCCReference Include="ProjectEvents.pas"/>
 			<DCCReference Include="CurrentUnitEvents.pas"/>
 			<DCCReference Include="CompilerEvents.pas"/>
+			<DCCReference Include="SynD16Highlighter.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

@@ -63,7 +63,7 @@ type
 implementation
 
 uses
-  SynHighlighterPas, SynEditSearch, BreakPoint, ColorFunctions;
+  SynD16Highlighter, SynEditSearch, BreakPoint, ColorFunctions;
 
 { TIDEEdit }
 
@@ -83,12 +83,7 @@ begin
   FLineInfo := TObjectList<TLineInfo>.Create();
   InterceptBuffer();
   FRefactor := TSimpleRefactor.Create(Self);
-  Highlighter := TSynPasSyn.Create(Self);
-  TSynPasSyn(Highlighter).AsmAttri.Foreground := clBlack;
-  TSynPasSyn(Highlighter).KeyAttri.Foreground := clNavy;
-  TSynPasSyn(Highlighter).CommentAttri.Foreground := clGreen;
-  TSynPasSyn(Highlighter).StringAttri.Foreground := clBlue;
-  TSynPasSyn(Highlighter).NumberAttri.Foreground := clBlue;
+  Highlighter := TSynD16Syn.Create(Self);
   Name := 'IDEEdit';
   Gutter.ShowLineNumbers := True;
   WantTabs := True;
