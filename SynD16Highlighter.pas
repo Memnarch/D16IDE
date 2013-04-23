@@ -729,7 +729,8 @@ begin
   fAsmStart := False;
   fDefaultFilter := SYNS_FilterPascal;
   //init colors
-  AsmAttri.Foreground := clBlack;
+  AsmAttri.Foreground := clRed;
+  AsmAttri.Style := [fsBold];
   KeyAttri.Foreground := clNavy;
   CommentAttri.Foreground := clGreen;
   StringAttri.Foreground := clBlue;
@@ -1090,7 +1091,7 @@ end;
 function TSynD16Syn.GetTokenID: TtkTokenKind;
 begin
   if not fAsmStart and (fRange = rsAsm)
-    and not (fTokenId in [tkNull, tkComment, tkDirec, tkSpace, tkKey, tkString, tkNumber, tkFloat, tkHex, tkChar])
+    and not (fTokenId in [tkNull, tkComment, tkDirec, tkSpace, tkString, tkNumber, tkFloat, tkHex, tkChar, tkIdentifier, tkSymbol])
   then
     Result := tkAsm
   else
