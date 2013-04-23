@@ -376,14 +376,9 @@ begin
       FD16Keywords.Add(KeyWords[KeyIndices[i]], i);
     end;
   end;
-  try
-    for i := CTableDASMStart to High(KeyIndices) do
-    begin
-      FDASMKeywords.Add(KeyWords[KeyIndices[i]], i);
-    end;
-  except
-    LIndex := KeyIndices[i];
-    MessageBox(0, @IntToStr(LIndex)[1], '', 0);
+  for i := CTableDASMStart to High(KeyIndices) do
+  begin
+    FDASMKeywords.Add(KeyWords[KeyIndices[i]], i);
   end;
 end;
 
