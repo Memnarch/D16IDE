@@ -278,7 +278,7 @@ object MainForm: TMainForm
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -13
-    Font.Name = 'Courier New'
+    Font.Name = 'Courier'
     Font.Style = []
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clBtnText
