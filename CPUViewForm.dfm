@@ -2,10 +2,10 @@ object CPUView: TCPUView
   AlignWithMargins = True
   Left = 0
   Top = 0
-  BorderStyle = bsNone
+  BorderStyle = bsSizeToolWin
   Caption = 'CPUView'
-  ClientHeight = 686
-  ClientWidth = 312
+  ClientHeight = 306
+  ClientWidth = 174
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,21 +15,11 @@ object CPUView: TCPUView
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
-  object Label1: TLabel
-    Left = 0
-    Top = 209
-    Width = 312
-    Height = 13
-    Align = alTop
-    Caption = 'Assembler:'
-    ExplicitTop = 177
-    ExplicitWidth = 53
-  end
   object RegisterList: TValueListEditor
     Left = 0
     Top = 0
-    Width = 312
-    Height = 209
+    Width = 174
+    Height = 257
     Align = alTop
     Strings.Strings = (
       'A='
@@ -40,75 +30,38 @@ object CPUView: TCPUView
       'Z='
       'I='
       'J='
-      'EX=')
+      'EX='
+      'SP='
+      'PC='
+      'IA=')
     TabOrder = 0
     TitleCaptions.Strings = (
       'Register'
       'Value')
+    ExplicitWidth = 165
     ColWidths = (
-      150
-      156)
-  end
-  object ASMView: TListBox
-    Left = 0
-    Top = 222
-    Width = 312
-    Height = 378
-    Align = alClient
-    BevelInner = bvNone
-    BevelOuter = bvNone
-    ItemHeight = 13
-    TabOrder = 1
-    ExplicitTop = 224
-    ExplicitHeight = 376
+      69
+      99)
   end
   object pnlBottom: TPanel
     Left = 0
-    Top = 600
-    Width = 312
-    Height = 86
-    Align = alBottom
+    Top = 257
+    Width = 174
+    Height = 40
+    Align = alTop
     BevelOuter = bvNone
-    TabOrder = 2
-    object Label7: TLabel
-      Left = 16
-      Top = 6
-      Width = 17
-      Height = 13
-      Caption = 'PC:'
-    end
-    object Label2: TLabel
-      Left = 16
-      Top = 25
-      Width = 15
-      Height = 13
-      Caption = 'IA:'
-    end
+    TabOrder = 1
+    ExplicitTop = 265
+    ExplicitWidth = 296
     object Label3: TLabel
-      Left = 86
+      Left = 6
       Top = 6
       Width = 36
       Height = 13
       Caption = 'Queue:'
     end
-    object lbPC: TLabel
-      Left = 39
-      Top = 6
-      Width = 41
-      Height = 13
-      AutoSize = False
-      Caption = '0'
-    end
-    object lbIA: TLabel
-      Left = 39
-      Top = 25
-      Width = 41
-      Height = 13
-      AutoSize = False
-      Caption = '0'
-    end
     object lbQueue: TLabel
-      Left = 142
+      Left = 62
       Top = 6
       Width = 41
       Height = 13
@@ -116,14 +69,14 @@ object CPUView: TCPUView
       Caption = '0'
     end
     object Label4: TLabel
-      Left = 86
+      Left = 6
       Top = 25
       Width = 35
       Height = 13
       Caption = 'Cycles:'
     end
     object lbCycles: TLabel
-      Left = 142
+      Left = 62
       Top = 25
       Width = 41
       Height = 13

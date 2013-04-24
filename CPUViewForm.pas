@@ -4,30 +4,21 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, ValEdit, StdCtrls, ExtCtrls, Emulator;
+  Dialogs, Grids, ValEdit, StdCtrls, ExtCtrls, Emulator, IDEView, Events;
 
 type
-  TCPUView = class(TForm)
+  TCPUView = class(TIDEView)
     RegisterList: TValueListEditor;
-    ASMView: TListBox;
     pnlBottom: TPanel;
-    Label1: TLabel;
-    Label7: TLabel;
-    Label2: TLabel;
     Label3: TLabel;
-    lbPC: TLabel;
-    lbIA: TLabel;
     lbQueue: TLabel;
     Label4: TLabel;
     lbCycles: TLabel;
   private
     { Private declarations }
-    FEmu: TD16Emulator;
   public
     { Public declarations }
-    procedure SetEmulator(AEmu: TD16Emulator);
-    procedure LoadASMFromFile(AFile: string);
-    procedure UpdateData();
+    procedure Event(AEventData: TEventData); override;
   end;
 
 var
@@ -36,39 +27,34 @@ var
 implementation
 
 uses
-  EmuTypes;
+  EmuTypes, DebugEvents;
 
 {$R *.dfm}
 
 { TCPUView }
 
-procedure TCPUView.LoadASMFromFile(AFile: string);
+procedure TCPUView.Event;
+var
+  LData: TDebugEeventData;
 begin
-  ASMView.Items.LoadFromFile(AFile);
-end;
-
-procedure TCPUView.SetEmulator(AEmu: TD16Emulator);
-begin
-  FEmu := AEmu;
-  FEmu.OnIdle := UpdateData;
-end;
-
-procedure TCPUView.UpdateData;
-begin
-  RegisterList.Values['A'] := '0x' + IntToHex(FEmu.Registers[CRegA], 4);
-  RegisterList.Values['B'] := '0x' + IntToHex(FEmu.Registers[CRegB], 4);
-  RegisterList.Values['C'] := '0x' + IntToHex(FEmu.Registers[CRegC], 4);
-  RegisterList.Values['X'] := '0x' + IntToHex(FEmu.Registers[CRegX], 4);
-  RegisterList.Values['Y'] := '0x' + IntToHex(FEmu.Registers[CRegY], 4);
-  RegisterList.Values['Z'] := '0x' + IntToHex(FEmu.Registers[CRegZ], 4);
-  RegisterList.Values['I'] := '0x' + IntToHex(FEmu.Registers[CRegI], 4);
-  RegisterList.Values['J'] := '0x' + IntToHex(FEmu.Registers[CRegJ], 4);
-  RegisterList.Values['EX'] := '0x' + IntToHex(FEmu.Registers[CRegEX], 4);
-
-  lbPC.Caption := '0x' + IntToHex(FEmu.Registers[CRegPC], 4);
-  lbIA.Caption := '0x' + IntToHex(FEmu.Registers[CRegIA], 4);
-  lbQueue.Caption := IntToStr(FEmu.InterruptQueue.Count);
-  lbCycles.Caption := IntToStr(FEmu.Cycles);
+  if AEventData.EventID = CDebugStep then
+  begin
+    LData := TDebugEeventData(AEventData);
+    RegisterList.Values['A'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegA), 4);
+    RegisterList.Values['B'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegB), 4);
+    RegisterList.Values['C'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegC), 4);
+    RegisterList.Values['X'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegX), 4);
+    RegisterList.Values['Y'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegY), 4);
+    RegisterList.Values['Z'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegZ), 4);
+    RegisterList.Values['I'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegI), 4);
+    RegisterList.Values['J'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegJ), 4);
+    RegisterList.Values['EX'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegEX), 4);
+    RegisterList.Values['SP'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegSP), 4);
+    RegisterList.Values['PC'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegPC), 4);
+    RegisterList.Values['IA'] := '0x' + IntToHex(LData.Debugger.ReadRegister(CRegIA), 4);
+//    lbQueue.Caption := IntToStr(FEmu.InterruptQueue.Count);
+//    lbCycles.Caption := IntToStr(FEmu.Cycles);
+  end;
 end;
 
 end.
