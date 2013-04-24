@@ -181,7 +181,14 @@ begin
       begin
         if (LElement is TProcDeclaration) and (not (TProcDeclaration(LElement).IsDummy and AIgnoreDummyProcs)) then
         begin
-          LCat := 'proc';
+          if TProcDeclaration(LElement).IsFunction then
+          begin
+            LCat := 'function';
+          end
+          else
+          begin
+            LCat := 'procedure';
+          end;
           LType :=  '(';
           for LParam in TProcDeclaration(LElement).Parameters do
           begin
