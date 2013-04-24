@@ -9,7 +9,6 @@ type
   TIDEView = class(TDockClient)
   private
     FController: IIDEController;
-    procedure DoClose(var Action: TCloseAction); override;
   public
     constructor Create(AOwner: TComponent); override;
     procedure Event(AEventData: TEventData); virtual;
@@ -24,11 +23,6 @@ constructor TIDEView.Create(AOwner: TComponent);
 begin
   inherited;
   BorderStyle := bsSizeToolWin;
-end;
-
-procedure TIDEView.DoClose(var Action: TCloseAction);
-begin
-  Action := caHide;
 end;
 
 procedure TIDEView.Event(AEventData: TEventData);
