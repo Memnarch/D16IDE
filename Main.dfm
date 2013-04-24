@@ -245,6 +245,9 @@ object MainForm: TMainForm
         Action = IDEActions.actReplace
       end
     end
+    object btnView: TMenuItem
+      Caption = 'View'
+    end
     object Project1: TMenuItem
       Caption = 'Project'
       object miCompile: TMenuItem

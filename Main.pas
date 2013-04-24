@@ -68,6 +68,7 @@ type
     ToolButton4: TToolButton;
     ToolButton5: TToolButton;
     btnCheckUpdates: TMenuItem;
+    btnView: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure SynCompletionProposalExecute(Kind: SynCompletionType;
       Sender: TObject; var CurrentInput: string; var x, y: Integer;
@@ -83,6 +84,7 @@ type
     FCodeView: TCodeView;
     FProjectView: TProjectView;
     FMessageView: TMessageView;
+    FCPUView: TCPUView;
     procedure BindActions();
   public
     { Public declarations }
@@ -97,7 +99,8 @@ implementation
 
 uses
  CompilerUtil, ProjectOptionDialog, DateUtils, CodeElement,
- VarDeclaration, ProcDeclaration, DataType, LogTreeController, EventGroups;
+ VarDeclaration, ProcDeclaration, DataType, LogTreeController, EventGroups,
+ MenuFormItem;
 
 {$R *.dfm}
 
@@ -160,6 +163,7 @@ begin
   FCodeView := TCodeView.Create(Self);
   FProjectView := TProjectView.Create(Self);
   FMessageView := TMessageView.Create(Self);
+  FCPUView := TCPUView.Create(Self);
   FIDEData := TIDEData.Create(Self);
   FIDEActions := TIDEActions.Create(Self);
   FController := TIDEController.Create(Self, PageControl, SynCompletionProposal);
@@ -169,6 +173,7 @@ begin
   FController.Layout.RegisterView(FCodeView, [egCurrentUnit]);
   FController.Layout.RegisterView(FProjectView, [egProject]);
   FController.Layout.RegisterView(FMessageView, [egCompiler, egEmulator]);
+  FController.Layout.RegisterView(FCPUView, [egDebugger]);
   BindActions();
   FProjectView.IDEData := FIDEData;
   FProjectView.IDEActions := FIDEActions;
@@ -177,6 +182,12 @@ begin
   FCodeView.Controller := FController;
   FProjectView.Controller := FController;
   FMessageView.Controller := FController;
+  FCPUView.Controller := FController;
+
+  btnView.Add(TMenuFormItem.Create(btnView, FCodeView));
+  btnView.Add(TMenuFormItem.Create(btnView, FMessageView));
+  btnView.Add(TMenuFormItem.Create(btnView, FProjectView));
+  btnView.Add(TMenuFormItem.Create(btnView, FCPUView));
 end;
 
 destructor TMainForm.Destroy;
@@ -212,7 +223,7 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-    FController.Layout.Load('Default');
+  FController.Layout.Load('Default');
   FController.CreateNewProject('Project1', '');
 end;
 
