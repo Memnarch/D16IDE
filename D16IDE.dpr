@@ -43,7 +43,9 @@ uses
   ProjectEvents in 'ProjectEvents.pas',
   CurrentUnitEvents in 'CurrentUnitEvents.pas',
   CompilerEvents in 'CompilerEvents.pas',
-  SynD16Highlighter in 'SynD16Highlighter.pas';
+  SynD16Highlighter in 'SynD16Highlighter.pas',
+  DebugEvents in 'DebugEvents.pas',
+  MenuFormItem in 'MenuFormItem.pas';
 
 {$R *.res}
 
