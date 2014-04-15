@@ -544,7 +544,7 @@ procedure TIDEController.HandleCompileMessage(AMessage, AUnitName: string;
   ALine: Integer; ALevel: TMessageLevel);
 begin
   CompilerMessage(AMessage, AUnitName, ALine, ALevel);
-  if ALevel <> mlNone then
+  if not (ALevel in [mlNone, mlWarning]) then
   begin
     Inc(FErrors);
   end;
